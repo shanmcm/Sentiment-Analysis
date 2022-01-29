@@ -9,35 +9,40 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import params #aggiunto params file in cui salviamo tutti gli hyperparameters
+from lstm_cell import LSTMCell #importo la notra LSTMCell
+
 class SentAnalysis(nn.ModuleList):
-	def __init__(self, args, vocab_size):
+	def __init__(self, batch_size, hidden_dim, vocab_size, window, dropout_rate): #aggiunto parametri che prima erano in args
 		super(SentAnalysis, self).__init__()
 		
-		self.batch_size = args.batch_size
-		self.hidden_dim = args.hidden_dim
+		self.batch_size = batch_size
+		self.hidden_dim = hidden_dim
 		self.input_size = vocab_size
 		self.num_classes = vocab_size
-		self.sequence_len = args.window
+		self.sequence_len = window
 		
 		# Dropout
-		self.dropout = nn.Dropout(0.25)
+		self.dropout = nn.Dropout(params.dropout_rate)
 		
 		# Embedding layer
 		self.embedding = nn.Embedding(self.input_size, self.hidden_dim, padding_idx=0)
 		
 		# Bi-LSTM
 		# Forward and backward
-		self.lstm_cell_forward = nn.LSTMCell(self.hidden_dim, self.hidden_dim)
-		self.lstm_cell_backward = nn.LSTMCell(self.hidden_dim, self.hidden_dim)
+		self.lstm_cell_forward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim) #x,h,c
+		self.lstm_cell_backward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)#x,h,c
 		
 		# LSTM layer
-		self.lstm_cell = nn.LSTMCell(self.hidden_dim * 2, self.hidden_dim * 2)
+		self.lstm_cell = LSTMCell(self.input_size*2, self.hidden_dim * 2, self.hidden_dim * 2) #ho agggiunto self.input_ize*2 cosi perchè qui fa self.hidden_dim*2 ma non so perchè
 		
 		# Linear layer
 		self.linear = nn.Linear(self.hidden_dim * 2, self.num_classes)
 		
 	def forward(self, x):
-	
+    
+    #credo la parte di weights initialization vada tolta (?)
+    
 		# Bi-LSTM
 		# hs = [batch_size x hidden_size]
 		# cs = [batch_size x hidden_size]
