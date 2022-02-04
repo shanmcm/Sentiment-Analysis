@@ -42,17 +42,10 @@ def penn_to_wn(tag):
 
 def get_sentiment(word: str) -> float:
     tag = nltk.pos_tag([word])[0][1]
+    print(tag)
     ss = wn.synsets(word)
     if ss:
-        lemmatizer = WordNetLemmatizer()
-        wn_tag = penn_to_wn(tag)
-        if wn_tag not in (wn.NOUN, wn.ADJ, wn.ADV):
-            return 0.
-        # Lemmatization
-        lemma = lemmatizer.lemmatize(word, pos=wn_tag)
-        if not lemma:
-            return 0.
-        score = swn.senti_synset(f"{word}.{wn_tag}.01")
+        score = swn.senti_synset(ss.__getitem__(0).name())
         word_score = (score.pos_score() + score.neg_score())/2
         return word_score
     else:
@@ -177,9 +170,9 @@ class AmazonDataset(Dataset):
         print(tokenized_text)
         for token in tokenized_text:
             print(f"Token = {token}")
-            embedding.append(self.embedded_words_dict[token])
+            sent = get_sentiment(token)
+            embedding.append(self.embedded_words_dict[token]*sent)
         return embedding
-
 ## Usage:
 # p = AmazonDataset()
 # p.load_dataset()
