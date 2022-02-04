@@ -167,9 +167,7 @@ class AmazonDataset(Dataset):
         sent = self.data[idx]
         embedding = []
         tokenized_text = self.tokenizer.tokenize(sent)
-        print(tokenized_text)
         for token in tokenized_text:
-            print(f"Token = {token}")
             sent = get_sentiment(token)
             embedding.append(self.embedded_words_dict[token]*sent)
         return embedding
