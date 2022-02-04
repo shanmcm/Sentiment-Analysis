@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -39,22 +40,28 @@ def penn_to_wn(tag):
     return None
 
 
-def get_sentiment(word: str, tag: str) -> float:
-    lemmatizer = WordNetLemmatizer()
-    wn_tag = penn_to_wn(tag)
-    if wn_tag not in (wn.NOUN, wn.ADJ, wn.ADV):
-        return 0.
-    # Lemmatization
-    lemma = lemmatizer.lemmatize(word, pos=wn_tag)
-    if not lemma:
-        return 0.
-    score = swn.senti_synset(f"{word}.{tag}.01")
-    word_score = (score.pos_score() + score.neg_score())/2
-    return word_score
+def get_sentiment(word: str) -> float:
+    tag = nltk.pos_tag([word])[0][1]
+    ss = wn.synsets(word)
+    if ss:
+        lemmatizer = WordNetLemmatizer()
+        wn_tag = penn_to_wn(tag)
+        if wn_tag not in (wn.NOUN, wn.ADJ, wn.ADV):
+            return 0.
+        # Lemmatization
+        lemma = lemmatizer.lemmatize(word, pos=wn_tag)
+        if not lemma:
+            return 0.
+        score = swn.senti_synset(f"{word}.{wn_tag}.01")
+        word_score = (score.pos_score() + score.neg_score())/2
+        return word_score
+    else:
+        return 1.
 
 
 class AmazonDataset(Dataset):
     def __init__(self):
+        self.tokenizer = None
         self.embedded_words_dict = None
         self.ranking = None
         self.tfidf = None
@@ -62,6 +69,7 @@ class AmazonDataset(Dataset):
         self.data = None
         self.path = params.path_ds
         assert os.path.exists(self.path), "Please insert a valid dataset path"
+        self.loaded = os.path.exists(os.path.join(self.path, 'amazonDataset.pkl'))
 
     def clean_strings(self):
         to_remove = []
@@ -104,23 +112,14 @@ class AmazonDataset(Dataset):
         ranking = ranking[:160]
         self.ranking = ranking
 
-    def sentimental_lexicon(self):
-        pos = neg = obj = count = 0
-        postagging = []
-        for review in self.data:
-            els = word_tokenize(review)
-            postagging.append(nltk.pos_tag(els))
-
     def bert_embedding(self):
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
         model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
         model.eval()
         embedded_data = {}
         for i, sent in self.data.iteritems():
-            if i == 402:
-                print("Here")
-            tokenized_text = tokenizer.tokenize(sent)
-            input_id = tokenizer.convert_tokens_to_ids(tokenized_text)
+            tokenized_text = self.tokenizer.tokenize(sent)
+            input_id = self.tokenizer.convert_tokens_to_ids(tokenized_text)
             attention_mask = [1] * len(tokenized_text)
             input_ids = list(splitter(input_id, 510))
             attention_masks = list(splitter(attention_mask, 510))
@@ -145,30 +144,42 @@ class AmazonDataset(Dataset):
         self.embedded_words_dict = embedded_data
 
     def load_dataset(self):
-        ds = pd.read_csv(f"{self.path}/dataset.csv")
-        self.data = ds["reviewText"].copy(deep=True)
-        self.labels = ds["overall"].copy(deep=True)
-        tmp1 = self.clean_strings()
-        tmp2 = self.sw_removal()
-        to_remove = np.append(tmp1, tmp2)
-        self.data.drop(to_remove, inplace=True)
-        self.labels.drop(to_remove, inplace=True)
-        self.bert_embedding()
+        if not self.loaded:
+            ds = pd.read_csv(f"{self.path}/dataset.csv")
+            self.data = ds["reviewText"].copy(deep=True)
+            self.labels = ds["overall"].copy(deep=True)
+            tmp1 = self.clean_strings()
+            tmp2 = self.sw_removal()
+            to_remove = np.append(tmp1, tmp2)
+            self.data.drop(to_remove, inplace=True)
+            self.labels.drop(to_remove, inplace=True)
+            self.bert_embedding()
+            with open(f'{self.path}/amazonDataset.pkl', 'wb') as outp:
+                pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
+        else:
+            with open(f'{self.path}/amazonDataset.pkl', 'rb') as inp:
+                dataset = pickle.load(inp)
+                self.tokenizer = dataset.tokenizer
+                self.embedded_words_dict = dataset.embedded_words_dict
+                self.ranking = dataset.ranking
+                self.tfidf = dataset.tfidf
+                self.labels = dataset.labels
+                self.data = dataset.data
+                self.path = dataset.path.path
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        image = []  # read_image(img_path)
-        label = self.img_labels.iloc[idx, 1]
-        if self.transform:
-            image = self.transform(image)
-        if self.target_transform:
-            label = self.target_transform(label)
-        return image, label
+        sent = self.data[idx]
+        embedding = []
+        tokenized_text = self.tokenizer.tokenize(sent)
+        print(tokenized_text)
+        for token in tokenized_text:
+            print(f"Token = {token}")
+            embedding.append(self.embedded_words_dict[token])
+        return embedding
 
-## Utilizzo:
+## Usage:
 # p = AmazonDataset()
 # p.load_dataset()
-
