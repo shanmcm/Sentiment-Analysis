@@ -9,8 +9,17 @@ Original file is located at
 
 import random
 import torch
+import nltk
+
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+path_ds = "/home/lucia/Documents/nlp_project"
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('corpus')
 
 NUM_CLASSES = 5  #1,2,3,4,5 stars
 
