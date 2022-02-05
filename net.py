@@ -12,21 +12,21 @@ import torch.nn.functional as F
 import params #aggiunto params file in cui salviamo tutti gli hyperparameters
 from lstm_cell import LSTMCell #importo la notra LSTMCell
 
-class SentAnalysis(nn.ModuleList):
-	def __init__(self, batch_size, hidden_dim, vocab_size, window, dropout_rate): #aggiunto parametri che prima erano in args
-		super(SentAnalysis, self).__init__()
+class SentimentAnalysis(nn.ModuleList):
+	def __init__(self, batch_size, hidden_dim, embedding_size, dropout_rate): #aggiunto parametri che prima erano in args
+		super(SentimentAnalysis, self).__init__()
 		
 		self.batch_size = batch_size
 		self.hidden_dim = hidden_dim
-		self.input_size = vocab_size
-		self.num_classes = vocab_size
-		self.sequence_len = window
+		self.input_size = embedding_size
+		self.num_classes = 5
+    
 		
 		# Dropout
-		self.dropout = nn.Dropout(params.dropout_rate)
+		self.dropout = nn.Dropout(dropout_rate)
 		
 		# Embedding layer
-		self.embedding = nn.Embedding(self.input_size, self.hidden_dim, padding_idx=0)
+		#self.embedding = nn.Embedding(self.input_size, self.hidden_dim, padding_idx=0)
 		
 		# Bi-LSTM
 		# Forward and backward
@@ -66,23 +66,23 @@ class SentAnalysis(nn.ModuleList):
 		torch.nn.init.kaiming_normal_(cs_lstm)
 
 		# From idx to embedding
-		out = self.embedding(x)
+		#out = self.embedding(x)
 		
 		# Prepare the shape for LSTM Cells
-		out = out.view(self.sequence_len, x.size(0), -1)
+		#out = out.view(self.sequence_len, x.size(0), -1)
 		
 		forward = []
 		backward = []
 		
 		# Unfolding Bi-LSTM
 		# Forward
-		for i in range(self.sequence_len):
-		 	hs_forward, cs_forward = self.lstm_cell_forward(out[i], (hs_forward, cs_forward))
+		for i in range(len(x)):
+		 	hs_forward, cs_forward = self.lstm_cell_forward(x[i], (hs_forward, cs_forward))
 		 	forward.append(hs_forward)
 		 	
 		# Backward
-		for i in reversed(range(self.sequence_len)):
-		 	hs_backward, cs_backward = self.lstm_cell_backward(out[i], (hs_backward, cs_backward))
+		for i in reversed(range(len(x))):
+		 	hs_backward, cs_backward = self.lstm_cell_backward(x[i], (hs_backward, cs_backward))
 		 	backward.append(hs_backward)
 
 		# LSTM

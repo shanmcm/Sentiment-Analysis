@@ -1,5 +1,5 @@
 import os
-import pickle
+import pickle5 as pickle
 
 import numpy as np
 import pandas as pd
@@ -63,6 +63,7 @@ class AmazonDataset(Dataset):
         self.path = params.path_ds
         assert os.path.exists(self.path), "Please insert a valid dataset path"
         self.loaded = os.path.exists(os.path.join(self.path, 'amazonDataset.pkl'))
+        print(self.loaded)
 
     def clean_strings(self):
         to_remove = []
@@ -150,7 +151,9 @@ class AmazonDataset(Dataset):
             with open(f'{self.path}/amazonDataset.pkl', 'wb') as outp:
                 pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
         else:
-            with open(f'{self.path}/amazonDataset.pkl', 'rb') as inp:
+            print("weee")
+            with open(f'{params.path_ds}/amazonDataset.pkl', 'rb') as inp:
+                print("ciao")
                 dataset = pickle.load(inp)
                 self.tokenizer = dataset.tokenizer
                 self.embedded_words_dict = dataset.embedded_words_dict
@@ -158,7 +161,7 @@ class AmazonDataset(Dataset):
                 self.tfidf = dataset.tfidf
                 self.labels = dataset.labels
                 self.data = dataset.data
-                self.path = dataset.path.path
+                self.path = dataset.path
 
     def __len__(self):
         return len(self.labels)
