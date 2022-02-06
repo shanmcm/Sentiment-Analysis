@@ -42,7 +42,7 @@ def penn_to_wn(tag):
 
 def get_sentiment(word: str) -> float:
     tag = nltk.pos_tag([word])[0][1]
-    print(tag)
+    #print(tag)
     ss = wn.synsets(word)
     if ss:
         score = swn.senti_synset(ss.__getitem__(0).name())
@@ -63,7 +63,7 @@ class AmazonDataset(Dataset):
         self.path = params.path_ds
         assert os.path.exists(self.path), "Please insert a valid dataset path"
         self.loaded = os.path.exists(os.path.join(self.path, 'amazonDataset.pkl'))
-        print(self.loaded)
+        #print(self.loaded)
 
     def clean_strings(self):
         to_remove = []
@@ -151,9 +151,9 @@ class AmazonDataset(Dataset):
             with open(f'{self.path}/amazonDataset.pkl', 'wb') as outp:
                 pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
         else:
-            print("weee")
+          
             with open(f'{params.path_ds}/amazonDataset.pkl', 'rb') as inp:
-                print("ciao")
+                
                 dataset = pickle.load(inp)
                 self.tokenizer = dataset.tokenizer
                 self.embedded_words_dict = dataset.embedded_words_dict
@@ -174,6 +174,8 @@ class AmazonDataset(Dataset):
             sent = get_sentiment(token)
             embedding.append(self.embedded_words_dict[token]*sent)
         return embedding
+
+        
 ## Usage:
 # p = AmazonDataset()
 # p.load_dataset()
