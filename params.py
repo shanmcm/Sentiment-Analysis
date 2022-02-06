@@ -15,7 +15,7 @@ import nltk
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-path_ds = "/content/"
+path_ds = "./"
 
 nltk.download('punkt')
 nltk.download('stopwords')

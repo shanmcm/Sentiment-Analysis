@@ -139,7 +139,8 @@ class AmazonDataset(Dataset):
 
     def load_dataset(self):
         if not self.loaded:
-            ds = pd.read_csv(f"{self.path}/dataset.csv")
+            ds = pd.read_json (r'reviews.json',  lines=True)
+            #ds = pd.read_csv(f"{self.path}dataset.csv")
             self.data = ds["reviewText"].copy(deep=True)
             self.labels = ds["overall"].copy(deep=True)
             tmp1 = self.clean_strings()
@@ -148,11 +149,11 @@ class AmazonDataset(Dataset):
             self.data.drop(to_remove, inplace=True)
             self.labels.drop(to_remove, inplace=True)
             self.bert_embedding()
-            with open(f'{self.path}/amazonDataset.pkl', 'wb') as outp:
+            with open(f'{self.path}amazonDataset.pkl', 'wb') as outp:
                 pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
         else:
           
-            with open(f'{params.path_ds}/amazonDataset.pkl', 'rb') as inp:
+            with open(f'{self.path}amazonDataset.pkl', 'rb') as inp:
                 
                 dataset = pickle.load(inp)
                 self.tokenizer = dataset.tokenizer
