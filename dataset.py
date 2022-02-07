@@ -1,4 +1,5 @@
 import os
+from nltk.util import elementtree_indent
 import pickle5 as pickle
 
 import numpy as np
@@ -60,6 +61,7 @@ class AmazonDataset(Dataset):
         self.tfidf = None
         self.labels = None
         self.data = None
+        self.embedded_data = None
         self.path = params.path_ds
         assert os.path.exists(self.path), "Please insert a valid dataset path"
         self.loaded = os.path.exists(os.path.join(self.path, 'amazonDataset.pkl'))
@@ -139,8 +141,8 @@ class AmazonDataset(Dataset):
 
     def load_dataset(self):
         if not self.loaded:
-            ds = pd.read_json (r'reviews.json',  lines=True)
-            #ds = pd.read_csv(f"{self.path}dataset.csv")
+            #ds = pd.read_json (r'reviews.json',  lines=True)
+            ds = pd.read_csv(self.path+"reviews.csv", sep=';')
             self.data = ds["reviewText"].copy(deep=True)
             self.labels = ds["overall"].copy(deep=True)
             tmp1 = self.clean_strings()
@@ -176,7 +178,14 @@ class AmazonDataset(Dataset):
             embedding.append(self.embedded_words_dict[token]*sent)
         return embedding
 
-        
+    def format_data(self):
+        embedded = []
+        for idx in range(len(self.labels)):
+            embedded.append(self.__getitem__(idx))
+        self.embedded_data = embedded
+        return embedded
+
+
 ## Usage:
 # p = AmazonDataset()
 # p.load_dataset()
