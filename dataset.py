@@ -185,16 +185,16 @@ class AmazonDataset(Dataset):
     def __getitem__(self, idx):
         sent = self.data[idx]
         lab = self.labels[idx]
-        embedding = []
+        embedding = [torch.Tensor([0]*params.NUM_FEATURES)]*500
         tokenized_text = self.tokenizer.tokenize(sent)
-        for token in tokenized_text:
+        for i, token in enumerate(tokenized_text):
             sent = get_sentiment(token)
             tmp = torch.Tensor(self.embedded_words_dict[token] * sent)
-            embedding.append(tmp)
+            embedding[i] = tmp
         return embedding, lab
 
 
-## to check
+#  to check
 class Collator(object):
     def __init__(self, test=False, percentile=100):
         self.test = test

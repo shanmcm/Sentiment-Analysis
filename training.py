@@ -7,7 +7,7 @@ import numpy as np
 import dataset
 import net
 import params
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence, pad_packed_sequence
+from sklearn.metrics import accuracy_score
 
 
 def train_val_dataset(d, val_split=0.25):
@@ -25,7 +25,7 @@ train_ds, test_ds = train_val_dataset(ds)
 # Define parameters
 batch_size = params.BATCH_SIZE
 hidden_dim = 128
-embedding_size = len(ds.__getitem__(0)[0])  # lunghezza embedding (selezionato uno a caso perchè tanto tutti hanno la stessa dimensione)
+embedding_size = params.NUM_FEATURES  # lunghezza embedding (selezionato uno a caso perchè tanto tutti hanno la stessa dimensione)
 dropout_rate = params.DROPOUT_RATE
 lr = params.LR
 epochs = params.NUM_EPOCHS
@@ -42,9 +42,10 @@ lstm_model = net.SentimentAnalysis(batch_size,
 optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
 
 to_train = True
-
+torch.autograd.set_detect_anomaly(True)
 ce = nn.CrossEntropyLoss()
 mse = nn.MSELoss()
+softmax = torch.nn.Softmax()
 # train and validate
 if to_train:
     for epoch in range(epochs):
@@ -52,21 +53,26 @@ if to_train:
         epoch_loss = 0
         epoch_acc = 0
         for idxs, (batch, labels) in enumerate(train_loader):
-            padded_data = pad_sequence(batch, batch_first=True, padding_value=0)
-            optimizer.zero_grad()
-            predictions = lstm_model(batch)  # (text, text_lengths) # batch_size, hidden_dim, vocab_size, window, dropout_rate
-            loss = 0.5 * ce(predictions, batch.labels.squeeze()) + 0.5 * mse(predictions, batch.labels.squeeze())
-            winners = predictions.argmax(dim=1)
-            corrects = np.where(winners == batch.labels)
-            accuracy = corrects.sum().float() / float(batch.labels.size(0))
-
+            batch = torch.stack(batch)
+            batch = batch.permute(1, 0, 2)
+            # optimizer.zero_grad()
+            predictions = lstm_model(batch)
+            labels = torch.Tensor([x-1 for x in labels.data.numpy()])
+            long_labels = labels.type(torch.LongTensor)
+            loss1 = 0.5 * ce(predictions, long_labels)
+            print("Float Preds")
+            float_preds = torch.argmax(softmax(predictions), 1)
+            float_preds = float_preds.type(torch.FloatTensor)
+            loss2 = 0.5 * mse(float_preds, labels)
+            loss = loss1 + loss2
+            accuracy = accuracy_score(float_preds.data, long_labels)
             # perform backpropagation
-            loss.backward()
-
+            optimizer.zero_grad()
+            loss.backward(retain_graph=True)
             optimizer.step()
 
-            epoch_loss += loss.item()
-            epoch_acc += accuracy.item()
+            epoch_loss += loss  # .item()
+            epoch_acc += accuracy
 
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
 
