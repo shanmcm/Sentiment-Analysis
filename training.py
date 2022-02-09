@@ -41,11 +41,12 @@ lstm_model = net.SentimentAnalysis(batch_size,
 # optimization algorithm
 optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
 
+from torch.autograd import Variable
 to_train = True
 torch.autograd.set_detect_anomaly(True)
 ce = nn.CrossEntropyLoss()
 mse = nn.MSELoss()
-softmax = torch.nn.Softmax()
+softmax = torch.nn.Softmax(dim = 1)
 # train and validate
 if to_train:
     for epoch in range(epochs):
@@ -55,24 +56,31 @@ if to_train:
         for idxs, (batch, labels) in enumerate(train_loader):
             batch = torch.stack(batch)
             batch = batch.permute(1, 0, 2)
+            
             # optimizer.zero_grad()
             predictions = lstm_model(batch)
-            labels = torch.Tensor([x-1 for x in labels.data.numpy()])
+            
+            labels = torch.Tensor([x-1 for x in labels.data.numpy()]) #mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
             loss1 = 0.5 * ce(predictions, long_labels)
-            print("Float Preds")
+            
+            #print("Float Preds")
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
+            
             loss2 = 0.5 * mse(float_preds, labels)
-            loss = loss1 + loss2
+            loss = loss1.clone() + loss2.clone()
+            loss = Variable(loss, requires_grad = True)
             accuracy = accuracy_score(float_preds.data, long_labels)
+            
             # perform backpropagation
             optimizer.zero_grad()
-            loss.backward(retain_graph=True)
+            loss.backward()
+            print("ciao")
             optimizer.step()
 
-            epoch_loss += loss  # .item()
-            epoch_acc += accuracy
+            epoch_loss = epoch_loss + loss  # .item()
+            epoch_acc = epoch_acc + accuracy
 
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
 
@@ -82,6 +90,7 @@ if to_train:
             torch.save(lstm_model.state_dict(), 'saved_weights_BiLSTM.pt')
 
         print(f'\tEpoch; {epoch} | Train Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
+
 
 # load weights and make predictions
 lstm_model.load_state_dict(torch.load("saved_weights_BiLSTM.pt"))

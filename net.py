@@ -66,12 +66,12 @@ class SentimentAnalysis(nn.ModuleList):
         # Unfolding Bi-LSTM
         # Forward
         for i in range(x.size(1)):
-            inp = x[:, i, :]
+            inp = x[:, i, :].clone()
             hs_forward, cs_forward = self.lstm_cell_forward(inp, (hs_forward, cs_forward))
             forward = forward + [hs_forward]
         # Backward
         for i in reversed(range(x.size(1))):
-            inp = x[:, i, :]
+            inp = x[:, i, :].clone()
             hs_backward, cs_backward = self.lstm_cell_backward(inp, (hs_backward, cs_backward))
             backward = backward + [hs_backward]
         # LSTM

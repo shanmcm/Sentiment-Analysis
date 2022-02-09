@@ -1,6 +1,6 @@
 import nltk
 
-path_ds = "/home/lucia/PycharmProjects/DeepNLPProject"
+path_ds = "./"
 pickled_name = "amazonDataset.pkl"
 nltk.download('punkt')
 nltk.download('stopwords')

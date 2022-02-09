@@ -70,6 +70,7 @@ class AmazonDataset(Dataset):
         self.labels = None
         self.data = None
         self.path = params.path_ds
+        #print(self.path)
         assert os.path.exists(self.path), "Please insert a valid dataset path"
         self.loaded = os.path.exists(os.path.join(self.path, params.pickled_name))
 
@@ -152,7 +153,7 @@ class AmazonDataset(Dataset):
 
     def load_dataset(self):
         if not self.loaded:
-            amazon_ds = pd.read_csv(f"{self.path}/dataset.csv")
+            amazon_ds = pd.read_csv(f"{self.path}/reviews.csv", sep =';')
             self.data = amazon_ds["reviewText"].copy(deep=True)
             self.labels = amazon_ds["overall"].copy(deep=True)
             tmp1 = self.clean_strings()
