@@ -17,8 +17,16 @@ def train_val_dataset(d, val_split=0.25):
 
 ds = dataset.AmazonDataset()  # fare prova con anche dataset non caricato
 ds.load_dataset()
-ds.filter()
+#ds.filter()
 ds.maximum_embedding_len = 500
+
+to_remove = []
+for idx in range(len(ds.data)):
+    if len(ds.data[idx].split(" "))>params.MAX_SENT_LEN:
+        to_remove.append(idx)
+print(to_remove)
+ds.filter(to_remove)
+
 
 train_ds, test_ds = train_val_dataset(ds)
 
@@ -41,6 +49,8 @@ lstm_model = net.SentimentAnalysis(batch_size,
 # optimization algorithm
 optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
 
+#10036 --> 664 > 500
+#print(len(ds.data[500].split(" ")))
 from torch.autograd import Variable
 to_train = True
 torch.autograd.set_detect_anomaly(True)
@@ -76,12 +86,12 @@ if to_train:
             # perform backpropagation
             optimizer.zero_grad()
             loss.backward()
-            print("ciao")
+            #print("ciao")
             optimizer.step()
 
             epoch_loss = epoch_loss + loss  # .item()
             epoch_acc = epoch_acc + accuracy
-
+        
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
 
         # save best model

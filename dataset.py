@@ -3,10 +3,9 @@ import os
 import nltk
 import numpy as np
 import pandas as pd
-import pickle5 as pickle
+import pickle
 import torch
 from joblib.numpy_pickle_utils import xrange
-from keras_preprocessing import sequence
 from nltk.corpus import sentiwordnet as swn
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
@@ -53,11 +52,19 @@ def get_sentiment(word: str) -> float:
     else:
         return 1.
 
-
+'''
+original
 idx_to_remove = [226, 371, 412, 1884, 1887, 3613, 4906, 5010,
                  5056, 5118, 5738, 5973, 6576, 8068, 8086, 8500,
                  8636, 8713, 9120, 9151, 9182, 9303, 9355, 9571, 9790,
                  9824, 10026, 10039, 10043, 10184]
+
+#aggiornato con andre
+idx_to_remove = [225, 370, 411, 1883, 1886, 3612, 4905, 5009,
+                 5055, 5117, 5737, 5972, 6575, 8067, 8085, 8499,
+                 8635, 8712, 9119, 9150, 9181, 9302, 9354, 9570, 9789,
+                 9823, 10025, 10038, 10042, 10183]
+'''
 
 
 class AmazonDataset(Dataset):
@@ -176,7 +183,7 @@ class AmazonDataset(Dataset):
                 self.data = amazon_ds.data
                 self.path = amazon_ds.path
 
-    def filter(self):
+    def filter(self, idx_to_remove):
         self.data.drop(idx_to_remove, inplace=True)
         self.labels.drop(idx_to_remove, inplace=True)
 
@@ -190,8 +197,18 @@ class AmazonDataset(Dataset):
         tokenized_text = self.tokenizer.tokenize(sent)
         for i, token in enumerate(tokenized_text):
             sent = get_sentiment(token)
-            tmp = torch.Tensor(self.embedded_words_dict[token] * sent)
-            embedding[i] = tmp
+            #tmp = torch.Tensor(self.embedded_words_dict[token] * sent)
+            #embedding[i] = tmp
+            #'''
+            try:
+                tmp = torch.Tensor(self.embedded_words_dict[token] * sent)
+            except KeyError:
+                print(idx, token, self.data[idx][:150])
+            try:
+                embedding[i] = tmp
+            except IndexError:
+                print(i, len(tokenized_text))
+            #'''
         return embedding, lab
 
 
