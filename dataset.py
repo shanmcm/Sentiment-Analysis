@@ -191,24 +191,13 @@ class AmazonDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        sent = self.data[idx]
         lab = self.labels[idx]
-        embedding = [torch.Tensor([0]*params.NUM_FEATURES)]*500
+        sent = self.data[idx]
+        embedding = []
         tokenized_text = self.tokenizer.tokenize(sent)
-        for i, token in enumerate(tokenized_text):
+        for token in tokenized_text:
             sent = get_sentiment(token)
-            #tmp = torch.Tensor(self.embedded_words_dict[token] * sent)
-            #embedding[i] = tmp
-            #'''
-            try:
-                tmp = torch.Tensor(self.embedded_words_dict[token] * sent)
-            except KeyError:
-                print(idx, token, self.data[idx][:150])
-            try:
-                embedding[i] = tmp
-            except IndexError:
-                print(i, len(tokenized_text))
-            #'''
+            embedding.append(self.embedded_words_dict[token]*sent)
         return embedding, lab
 
 
