@@ -77,7 +77,7 @@ class AmazonDataset(Dataset):
         self.labels = None
         self.data = None
         self.path = params.path_ds
-        #print(self.path)
+        self.to_remove = []
         assert os.path.exists(self.path), "Please insert a valid dataset path"
         self.loaded = os.path.exists(os.path.join(self.path, params.pickled_name))
 
@@ -155,8 +155,12 @@ class AmazonDataset(Dataset):
                     for j, token in enumerate(token_embeddings):
                         cat_vec = torch.cat((token[-1], token[-2], token[-3], token[-4]), dim=0)
                         embedded_data[test_chunk[j]] = cat_vec
+            else:
+                self.to_remove.append(i)
+    
         self.embedded_words_dict = embedded_data
         self.maximum_embedding_len = len_max
+        print(self.to_remove)
 
     def load_dataset(self):
         if not self.loaded:
