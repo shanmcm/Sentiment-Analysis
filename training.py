@@ -53,6 +53,7 @@ if to_train:
         epoch_acc = 0
         print(f"epoch = {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
+            print(idxs)
             optimizer.zero_grad()
             predictions = lstm_model(batch)
             labels = torch.Tensor([x-1 for x in labels.data.numpy()]) #mapping classes 1-5 in 0-4
