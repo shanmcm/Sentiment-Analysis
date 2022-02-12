@@ -52,7 +52,7 @@ if to_train:
         epoch_loss = 0
         epoch_acc = 0
         for idxs, (batch, labels) in enumerate(train_loader):
-            print(f"idxs = {idxs}")
+            optimizer.zero_grad()
             predictions = lstm_model(batch)
             labels = torch.Tensor([x-1 for x in labels.data.numpy()]) #mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
@@ -64,7 +64,6 @@ if to_train:
             loss = loss1.clone() + loss2.clone()
             loss = Variable(loss, requires_grad=True)
             accuracy = accuracy_score(float_preds.data, long_labels)
-            
             # perform backpropagation
             optimizer.zero_grad()
             loss.backward()

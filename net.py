@@ -4,13 +4,12 @@ To do:
 - update embedding with ELMO
 '''
 
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
+from torch.nn.parameter import Parameter
 import params  # aggiunto params file in cui salviamo tutti gli hyperparameters
 from lstm_cell import LSTMCell  # importo la notra LSTMCell
+from attention_layer import AttentionLayer
 
 
 class SentimentAnalysis(nn.ModuleList):
@@ -30,25 +29,21 @@ class SentimentAnalysis(nn.ModuleList):
         self.lstm_cell_backward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
         # LSTM layer
         self.lstm_cell = LSTMCell(self.hidden_dim * 2, self.hidden_dim * 2,
-                                  self.hidden_dim * 2)  # ho agggiunto self.input_ize*2 cosi perchè qui fa self.hidden_dim*2 ma non so perchè
+                                  self.hidden_dim * 2)
 
         # Linear layer
         self.linear = nn.Linear(self.hidden_dim * 2, self.num_classes)
 
-    def forward(self, x):
-        # credo la parte di weights initialization vada tolta (?)
+        # Attention parameters
+        self.hidden_states_lstm = []
+        self.attention = AttentionLayer(self.hidden_dim)
 
-        # Bi-LSTM
-        # hs = [batch_size x hidden_size]
-        # cs = [batch_size x hidden_size]
+    def forward(self, x):
         hs_forward = torch.zeros(x.size(0), self.hidden_dim)
         cs_forward = torch.zeros(x.size(0), self.hidden_dim)
         hs_backward = torch.zeros(x.size(0), self.hidden_dim)
         cs_backward = torch.zeros(x.size(0), self.hidden_dim)
 
-        # LSTM
-        # hs = [batch_size x (hidden_size * 2)]
-        # cs = [batch_size x (hidden_size * 2)]
         hs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2)
         cs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2)
 
@@ -78,8 +73,10 @@ class SentimentAnalysis(nn.ModuleList):
         for fwd, bwd in zip(forward, backward):
             input_tensor = torch.cat((fwd, bwd), 1)
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))
+            self.hidden_states_lstm.append(hs_lstm)
 
+        hs_with_attention = self.attention(self.hidden_states_lstm)
         # Last hidden state is passed through a linear layer
-        out = self.linear(hs_lstm)
+        out = self.linear(hs_with_attention)
 
         return out
