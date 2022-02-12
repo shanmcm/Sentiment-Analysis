@@ -18,8 +18,8 @@ class LSTMCell(nn.Module):
         self.bias_ih = Parameter(torch.randn(4 * hidden_size))
         self.cell_state = Parameter(torch.zeros(params.BATCH_SIZE, cell_size))
 
-    def forward(self, input, state):  # state = (hx, cx)
-        tmp1 = torch.mm(input, self.W.t())  # 32x3072 X  3072x4h -> 32x4h
+    def forward(self, input_data, state):  # state = (hx, cx)
+        tmp1 = torch.mm(input_data, self.W.t())  # 32x3072 X  3072x4h -> 32x4h
         tmp2 = tmp1 + self.bias_ih  # -> 32x4h
 
         h_tmp = state[0]

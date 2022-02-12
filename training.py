@@ -51,6 +51,7 @@ if to_train:
         # training
         epoch_loss = 0
         epoch_acc = 0
+        print(f"epoch = {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
             optimizer.zero_grad()
             predictions = lstm_model(batch)
@@ -61,8 +62,8 @@ if to_train:
             float_preds = float_preds.type(torch.FloatTensor)
             
             loss2 = 0.5 * mse(float_preds, labels)
-            loss = loss1.clone() + loss2.clone()
-            loss = Variable(loss, requires_grad=True)
+            loss = loss1 + loss2
+            loss = Variable(loss , requires_grad=True)
             accuracy = accuracy_score(float_preds.data, long_labels)
             # perform backpropagation
             optimizer.zero_grad()
