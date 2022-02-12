@@ -4,17 +4,15 @@ import nltk
 import numpy as np
 import pandas as pd
 import pickle
-import torch
 from joblib.numpy_pickle_utils import xrange
 from nltk.corpus import sentiwordnet as swn
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
-from torch.nn.utils.rnn import pack_padded_sequence
-from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
 from transformers import BertModel, BertTokenizer
+from torch.nn.utils.rnn import pad_sequence
 import torch
 import params
 
@@ -52,19 +50,16 @@ def get_sentiment(word: str) -> float:
     else:
         return 1.
 
-'''
-original
-idx_to_remove = [226, 371, 412, 1884, 1887, 3613, 4906, 5010,
-                 5056, 5118, 5738, 5973, 6576, 8068, 8086, 8500,
-                 8636, 8713, 9120, 9151, 9182, 9303, 9355, 9571, 9790,
-                 9824, 10026, 10039, 10043, 10184]
 
-#aggiornato con andre
-idx_to_remove = [225, 370, 411, 1883, 1886, 3612, 4905, 5009,
-                 5055, 5117, 5737, 5972, 6575, 8067, 8085, 8499,
-                 8635, 8712, 9119, 9150, 9181, 9302, 9354, 9570, 9789,
-                 9823, 10025, 10038, 10042, 10183]
-'''
+def collate_batch(batch):
+    label_list, text_list, = [], []
+    for i, (text, label) in enumerate(batch):
+        label_list.append(label)
+        text = torch.stack(text)  # converts list of tensors to tensor of tensors
+        text_list.append(text)
+    label_list = torch.tensor(label_list, dtype=torch.int64)
+    text_list = pad_sequence(text_list, batch_first=True, padding_value=0)  # .size()
+    return text_list, label_list
 
 
 class AmazonDataset(Dataset):
@@ -160,7 +155,6 @@ class AmazonDataset(Dataset):
     
         self.embedded_words_dict = embedded_data
         self.maximum_embedding_len = len_max
-        print(self.to_remove)
 
     def load_dataset(self):
         if not self.loaded:
@@ -186,10 +180,12 @@ class AmazonDataset(Dataset):
                 self.labels = amazon_ds.labels
                 self.data = amazon_ds.data
                 self.path = amazon_ds.path
+                self.to_remove = amazon_ds.to_remove
+                self.maximum_embedding_len = amazon_ds.maximum_embedding_len
 
-    def filter(self, idx_to_remove):
-        self.data.drop(idx_to_remove, inplace=True)
-        self.labels.drop(idx_to_remove, inplace=True)
+    def filter(self):
+        self.data.drop(self.to_remove, inplace=True)
+        self.labels.drop(self.to_remove, inplace=True)
 
     def __len__(self):
         return len(self.labels)
@@ -203,24 +199,3 @@ class AmazonDataset(Dataset):
             sent = get_sentiment(token)
             embedding.append(self.embedded_words_dict[token]*sent)
         return embedding, lab
-
-
-#  to check
-class Collator(object):
-    def __init__(self, test=False, percentile=100):
-        self.test = test
-        self.percentile = percentile
-
-    def __call__(self, batch):
-        global MAX_LEN
-        if self.test:
-            texts, lens = zip(*batch)
-        else:
-            texts, lens, target = zip(*batch)
-        lens = np.array(lens)
-        max_len = min(int(np.percentile(lens, self.percentile)), MAX_LEN)
-        texts = torch.tensor(sequence.pad_sequences(texts, maxlen=max_len), dtype=torch.long)
-        if self.test:
-            return texts
-
-        return texts, torch.tensor(target, dtype=torch.float32)
