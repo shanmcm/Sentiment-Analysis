@@ -18,12 +18,6 @@ from sklearn.utils import class_weight
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def CELoss(outputs, targets):
-    logsoftmax = torch.nn.LogSoftmax()
-    softmax = torch.nn.Softmax(dim=0)
-    return torch.mean(torch.sum(-softmax(targets) * logsoftmax(outputs), 1))
-
-
 def train_val_dataset(d, val_split=0.25):
     train_idx, val_idx = train_test_split(list(d.data.index), test_size=val_split)
     return Subset(d, train_idx), Subset(d, val_idx)
@@ -33,6 +27,7 @@ print(f"Preparing...")
 ds = dataset.AmazonDataset()  # fare prova con anche dataset non caricato
 ds.load_dataset()
 ds.filter()
+ds.undersampling()
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
 weights = torch.Tensor(weights)
 train_ds, test_ds = train_val_dataset(ds)
@@ -78,8 +73,7 @@ if to_train:
             predictions = lstm_model(batch)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
-            # loss1 = 0.5 * ce(predictions, long_labels)
-            loss1 = 0.5 * CELoss(predictions, labels)
+            loss1 = 0.5 * ce(predictions, long_labels)
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
             loss2 = 0.5 * mse(float_preds, labels)

@@ -189,6 +189,16 @@ class AmazonDataset(Dataset):
         self.data.drop(self.to_remove, inplace=True)
         self.labels.drop(self.to_remove, inplace=True)
 
+    def undersampling(self):
+        minimum_len = self.labels.value_counts().min()
+        filtered_idxs = []
+        for lab in range(5):
+            idxs_lab = np.random.choice(self.labels.index[self.labels == lab+1], minimum_len, replace=False)
+            filtered_idxs = np.append(filtered_idxs, idxs_lab)
+        to_remove = set(self.labels.index) - set(filtered_idxs)
+        self.data.drop(to_remove, inplace=True)
+        self.labels.drop(to_remove, inplace=True)
+
     def __len__(self):
         return len(self.labels)
 
