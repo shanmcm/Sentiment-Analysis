@@ -36,7 +36,6 @@ class SentimentAnalysis(nn.ModuleList):
         self.linear = nn.Linear(self.hidden_dim * 2, self.num_classes)
 
         # Attention parameters
-        self.hidden_states_lstm = np.array([])
         self.attention = AttentionLayer(self.hidden_dim)
 
     def forward(self, x):
@@ -62,22 +61,22 @@ class SentimentAnalysis(nn.ModuleList):
         # Unfolding Bi-LSTM
         # Forward
         for i in range(x.size(1)):
-            inp = x[:, i, :]  # .clone()
+            inp = x[:, i, :]
             hs_forward, cs_forward = self.lstm_cell_forward(inp, (hs_forward, cs_forward))
             forward = forward + [hs_forward]
         # Backward
         for i in reversed(range(x.size(1))):
-            inp = x[:, i, :]  # .clone()
+            inp = x[:, i, :]
             hs_backward, cs_backward = self.lstm_cell_backward(inp, (hs_backward, cs_backward))
             backward = backward + [hs_backward]
         # LSTM
-        self.hidden_states_lstm = torch.Tensor()
+        hidden_states_lstm = torch.Tensor()
         for fwd, bwd in zip(forward, backward):
             input_tensor = torch.cat((fwd, bwd), 1)
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))
-            self.hidden_states_lstm = torch.cat((self.hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
-        hs_lstm = self.attention(self.hidden_states_lstm)
+            hidden_states_lstm = torch.cat((hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
+        hs_lstm = self.attention(hidden_states_lstm)
         # Last hidden state is passed through a linear layer
-        out = self.linear(hs_lstm)
+        out = self.linear(hs_lstm.t())
 
         return out

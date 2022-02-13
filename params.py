@@ -1,6 +1,6 @@
 import nltk
 
-path_ds = "C:/Users/mcsha/Desktop/Here/Sentiment-Analysis-Amazon-Musical-Instruments-Reviews"
+path_ds = "/home/lucia/PycharmProjects/Sentiment-Analysis-Amazon-Musical-Instruments-Reviews"
 pickled_name = "amazonDataset.pkl"
 nltk.download('punkt')
 nltk.download('stopwords')
