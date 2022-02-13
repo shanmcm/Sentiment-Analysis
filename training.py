@@ -67,7 +67,7 @@ if to_train:
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
         print(f"epoch = {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
-            print(f"idxs = {idxs}")
+            print(f"epoch = {epoch}, idxs = {idxs}")
             gc.collect()
             optimizer.zero_grad()
             batch = batch.to(device)
@@ -75,13 +75,14 @@ if to_train:
             predictions = lstm_model(batch)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
-            loss1 = ce(predictions, long_labels)
+            loss1 = 0.5 * ce(predictions, long_labels)
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            loss2 = mse(float_preds, labels)
+            loss2 = 0.5 * mse(float_preds, labels)
             loss1 = Variable(loss1, requires_grad=True)
             loss2 = Variable(loss2, requires_grad=True)
-
+            print(f"float_preds = {float_preds}")
+            print(f"labels = {labels}")
             accuracy = accuracy_score(float_preds.detach().data, long_labels)
             f1 = f1_score(float_preds.detach().data, long_labels, average='weighted')
             precision = precision_score(float_preds.detach().data, long_labels, average='weighted')
@@ -89,7 +90,7 @@ if to_train:
             loss1.backward()
             loss2.backward()
             optimizer.step()
-            loss = 0.5 * loss1.detach().item() + 0.5 * loss2.detach().item()
+            loss = loss1.detach().item() + loss2.detach().item()
             print(f"Accuracy = {accuracy}, f1 score = {f1}, loss = {loss}")
             epoch_loss = epoch_loss + loss
             epoch_acc = epoch_acc + accuracy
