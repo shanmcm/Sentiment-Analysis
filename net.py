@@ -76,7 +76,7 @@ class SentimentAnalysis(nn.ModuleList):
             input_tensor = torch.cat((fwd, bwd), 1)
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))
             self.hidden_states_lstm = torch.cat((self.hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
-        # hs_lstm = self.attention(self.hidden_states_lstm)
+        hs_lstm = self.attention(self.hidden_states_lstm)
         # Last hidden state is passed through a linear layer
         out = self.linear(hs_lstm)
 
