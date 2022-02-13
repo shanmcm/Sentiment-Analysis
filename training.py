@@ -18,6 +18,12 @@ from sklearn.utils import class_weight
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
+def CELoss(outputs, targets):
+    logsoftmax = torch.nn.LogSoftmax()
+    softmax = torch.nn.Softmax(dim=0)
+    return torch.mean(torch.sum(-softmax(targets) * logsoftmax(outputs), 1))
+
+
 def train_val_dataset(d, val_split=0.25):
     train_idx, val_idx = train_test_split(list(d.data.index), test_size=val_split)
     return Subset(d, train_idx), Subset(d, val_idx)
@@ -56,7 +62,6 @@ ce = nn.CrossEntropyLoss(weight=weights)
 mse = nn.MSELoss()
 softmax = torch.nn.Softmax(dim=1)
 
-
 # train and validate
 print("Start running")
 if to_train:
@@ -73,8 +78,8 @@ if to_train:
             predictions = lstm_model(batch)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
-            loss1 = 0.5 * ce(predictions, long_labels)
-
+            # loss1 = 0.5 * ce(predictions, long_labels)
+            loss1 = 0.5 * CELoss(predictions, labels)
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
             loss2 = 0.5 * mse(float_preds, labels)
@@ -84,7 +89,7 @@ if to_train:
             f1 = f1_score(float_preds.detach().data, long_labels, average='weighted')
             precision = precision_score(float_preds.detach().data, long_labels, average='weighted')
             recall = recall_score(float_preds.detach().data, long_labels, average='weighted')
-            print(f"Accuracy = {accuracy}, f1 score = {f1}")
+            print(f"Accuracy = {accuracy}, f1 score = {f1}, loss = {loss.detach().item()}")
             # perform backpropagation
             optimizer.zero_grad()
             loss.backward()
