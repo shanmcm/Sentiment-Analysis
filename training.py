@@ -8,6 +8,7 @@ from torch.utils.data import Subset
 from torch.autograd import Variable
 import dataset
 import net
+import easy_net
 import params
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
@@ -27,7 +28,7 @@ print(f"Preparing...")
 ds = dataset.AmazonDataset()  # fare prova con anche dataset non caricato
 ds.load_dataset()
 ds.filter()
-ds.undersampling()
+# ds.undersampling()
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
 weights = torch.Tensor(weights)
 train_ds, test_ds = train_val_dataset(ds)
@@ -48,6 +49,7 @@ lstm_model = net.SentimentAnalysis(batch_size,
                                    hidden_dim,
                                    embedding_size,
                                    dropout_rate)  # modificato LSTM con SentimentAnalysis (nome rete)
+
 lstm_model.to(device)
 # optimization algorithm
 optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
@@ -73,23 +75,23 @@ if to_train:
             predictions = lstm_model(batch)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
-            loss1 = 0.5 * ce(predictions, long_labels)
+            loss1 = ce(predictions, long_labels)
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            loss2 = 0.5 * mse(float_preds, labels)
-            loss = loss1 + loss2
-            loss = Variable(loss, requires_grad=True)
+            loss2 = mse(float_preds, labels)
+            loss1 = Variable(loss1, requires_grad=True)
+            loss2 = Variable(loss2, requires_grad=True)
+
             accuracy = accuracy_score(float_preds.detach().data, long_labels)
             f1 = f1_score(float_preds.detach().data, long_labels, average='weighted')
             precision = precision_score(float_preds.detach().data, long_labels, average='weighted')
             recall = recall_score(float_preds.detach().data, long_labels, average='weighted')
-            print(f"Accuracy = {accuracy}, f1 score = {f1}, loss = {loss.detach().item()}")
-            # perform backpropagation
-            optimizer.zero_grad()
-            loss.backward()
+            loss1.backward()
+            loss2.backward()
             optimizer.step()
-
-            epoch_loss = epoch_loss + loss.detach().item()
+            loss = 0.5 * loss1.detach().item() + 0.5 * loss2.detach().item()
+            print(f"Accuracy = {accuracy}, f1 score = {f1}, loss = {loss}")
+            epoch_loss = epoch_loss + loss
             epoch_acc = epoch_acc + accuracy
             epoch_f1 = epoch_f1 + f1
             epoch_precision = epoch_precision + precision

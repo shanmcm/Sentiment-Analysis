@@ -33,7 +33,6 @@ class LSTMCell(nn.Module):
         forgetgate = torch.sigmoid(forgetgate)
         cellgate = torch.tanh(cellgate)
         outgate = torch.sigmoid(outgate)
-
         cy_1 = (forgetgate * state[1])
         cy_2 = (ingate * cellgate)
         cy = cy_1 + cy_2

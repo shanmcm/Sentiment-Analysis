@@ -1,7 +1,7 @@
 import nltk
 
 path_ds = "/home/lucia/PycharmProjects/Sentiment-Analysis-Amazon-Musical-Instruments-Reviews"
-pickled_name = "amazonDataset.pkl"
+pickled_name = "amazonDataset_concat4layers.pkl"
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('corpus')
@@ -14,8 +14,8 @@ NUM_CLASSES = 5
 BATCH_SIZE = 32
 NUM_EPOCHS = 8
 WEIGHT_DECAY = 0.00001
-LR = 0.0001  # 0.025
+LR = 0.025
 DROPOUT_RATE = 0.4
 SEED = 42
 MAX_SENT_LEN = 500
-NUM_FEATURES = 768
+NUM_FEATURES = 3072  # 768

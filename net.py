@@ -26,11 +26,10 @@ class SentimentAnalysis(nn.ModuleList):
         self.dropout = nn.Dropout(dropout_rate)
         # Bi-LSTM
         # Forward and backward
-        self.lstm_cell_forward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
-        self.lstm_cell_backward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
+        self.lstm_cell_forward = nn.LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
+        self.lstm_cell_backward = nn.LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
         # LSTM layer
-        self.lstm_cell = LSTMCell(self.hidden_dim * 2, self.hidden_dim * 2,
-                                  self.hidden_dim * 2)
+        self.lstm_cell = nn.LSTMCell(self.hidden_dim * 2, self.hidden_dim * 2, self.hidden_dim * 2)
 
         # Linear layer
         self.linear = nn.Linear(self.hidden_dim * 2, self.num_classes)
@@ -69,6 +68,7 @@ class SentimentAnalysis(nn.ModuleList):
             inp = x[:, i, :]
             hs_backward, cs_backward = self.lstm_cell_backward(inp, (hs_backward, cs_backward))
             backward = backward + [hs_backward]
+        backward.reverse()
         # LSTM
         hidden_states_lstm = torch.Tensor()
         for fwd, bwd in zip(forward, backward):
