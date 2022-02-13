@@ -148,8 +148,9 @@ class AmazonDataset(Dataset):
                     token_embeddings = torch.squeeze(token_embeddings, dim=1)
                     token_embeddings = token_embeddings.permute(1, 0, 2)
                     for j, token in enumerate(token_embeddings):
-                        cat_vec = torch.cat((token[-1], token[-2], token[-3], token[-4]), dim=0)
-                        embedded_data[test_chunk[j]] = cat_vec
+                        new_token = torch.stack((token[-1], token[-2], token[-3], token[-4]))
+                        avg_vec = torch.mean(new_token, dim=0)
+                        embedded_data[test_chunk[j]] = avg_vec
             else:
                 self.to_remove.append(i)
     
@@ -182,6 +183,7 @@ class AmazonDataset(Dataset):
                 self.path = amazon_ds.path
                 self.to_remove = amazon_ds.to_remove
                 self.maximum_embedding_len = amazon_ds.maximum_embedding_len
+                del amazon_ds
 
     def filter(self):
         self.data.drop(self.to_remove, inplace=True)

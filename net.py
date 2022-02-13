@@ -10,6 +10,7 @@ from torch.nn.parameter import Parameter
 import params  # aggiunto params file in cui salviamo tutti gli hyperparameters
 from lstm_cell import LSTMCell  # importo la notra LSTMCell
 from attention_layer import AttentionLayer
+import numpy as np
 
 
 class SentimentAnalysis(nn.ModuleList):
@@ -35,7 +36,7 @@ class SentimentAnalysis(nn.ModuleList):
         self.linear = nn.Linear(self.hidden_dim * 2, self.num_classes)
 
         # Attention parameters
-        self.hidden_states_lstm = []
+        self.hidden_states_lstm = np.array([])
         self.attention = AttentionLayer(self.hidden_dim)
 
     def forward(self, x):
@@ -70,11 +71,11 @@ class SentimentAnalysis(nn.ModuleList):
             hs_backward, cs_backward = self.lstm_cell_backward(inp, (hs_backward, cs_backward))
             backward = backward + [hs_backward]
         # LSTM
+        self.hidden_states_lstm = torch.Tensor()
         for fwd, bwd in zip(forward, backward):
             input_tensor = torch.cat((fwd, bwd), 1)
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))
-            self.hidden_states_lstm.append(hs_lstm)
-
+            self.hidden_states_lstm = torch.cat((self.hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
         # hs_lstm = self.attention(self.hidden_states_lstm)
         # Last hidden state is passed through a linear layer
         out = self.linear(hs_lstm)
