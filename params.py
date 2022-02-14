@@ -1,6 +1,6 @@
 import nltk
 import os
-
+import torch
 path_ds = os.getcwd()
 pickled_name = "amazonDataset_concat4layers.pkl"
 nltk.download('punkt')
