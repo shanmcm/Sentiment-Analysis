@@ -102,6 +102,7 @@ if to_train:
             epoch_precision = epoch_precision + precision
             epoch_recall = epoch_recall + recall
 
+
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
         train_f1, train_precision = epoch_f1 / len(train_loader), epoch_precision / len(train_loader)
         train_recall = epoch_recall / len(train_loader)
