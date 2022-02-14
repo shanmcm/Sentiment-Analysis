@@ -1,6 +1,7 @@
 import nltk
+import os
 
-path_ds = "C:/Users/andre/Documents/GITHUB/MY PROJECTS/Sentiment-Analysis"
+path_ds = os.getcwd()
 pickled_name = "amazonDataset_avg.pkl"
 nltk.download('punkt')
 nltk.download('stopwords')
