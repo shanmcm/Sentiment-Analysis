@@ -13,7 +13,7 @@ from attention_layer import AttentionLayer
 import numpy as np
 
 
-class SentimentAnalysis(nn.ModuleList):
+class SentimentAnalysis(nn.Module):
     def __init__(self, batch_size, hidden_dim, embedding_size, dropout_rate):
         super(SentimentAnalysis, self).__init__()
 
@@ -65,13 +65,13 @@ class SentimentAnalysis(nn.ModuleList):
         for i in range(x.size(1)):
             inp = x[:, i, :]
             hs_forward, cs_forward = self.lstm_cell_forward(inp, (hs_forward, cs_forward))
-            forward = forward + [hs_forward]
+            forward.append(hs_forward)
 
         # Backward
         for i in reversed(range(x.size(1))):
             inp = x[:, i, :]
             hs_backward, cs_backward = self.lstm_cell_backward(inp, (hs_backward, cs_backward))
-            backward = backward + [hs_backward]
+            backward.append(hs_backward)
         backward.reverse()
         # LSTM
         hidden_states_lstm = torch.tensor((), device=params.DEVICE)

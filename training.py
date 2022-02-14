@@ -61,6 +61,7 @@ softmax = torch.nn.Softmax(dim=1)
 
 lstm_model = lstm_model.train()
 
+
 # train and validate
 print("Start running")
 with torch.enable_grad():
@@ -69,33 +70,30 @@ with torch.enable_grad():
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
         print(f"Epoch: {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
-            optimizer.zero_grad()
             batch = batch.to(device)
             labels = labels.to(device)
             predictions = lstm_model(batch).to('cpu')
-            print(list(lstm_model.parameters())[0].grad)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
-            # loss1 = 0.5 * ce(predictions, long_labels)
+            loss1 = 0.5 * ce(predictions, long_labels)
             # loss1 = 0.5 * bce(predictions, nn.functional.one_hot(long_labels).float())
-            loss1 = ce(predictions, long_labels)
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            # loss2 = 0.5 * torch.sqrt(mse(float_preds, labels))
-            # loss2.requires_grad = True
-            loss1 = Variable(loss1, requires_grad=True)
-            # loss2 = Variable(loss2, requires_grad=True)
+            float_preds.requires_grad = True
+            loss2 = 0.5 * torch.sqrt(mse(float_preds, labels))
+
             loss1.backward()
-            # loss2.backward()
+            loss2.backward()
             optimizer.step()
-            loss = loss1.item()  # + loss2.item()
+            optimizer.zero_grad()
+            loss = loss1.item() + loss2.item()
             del loss1
-            # del loss2
-            accuracy = accuracy_score(float_preds.detach().data, long_labels)
-            f1 = f1_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
-            precision = precision_score(float_preds.detach().data, long_labels, average='weighted',
+            del loss2
+            accuracy = accuracy_score(float_preds.data, long_labels)
+            f1 = f1_score(float_preds.data, long_labels, average='weighted', labels=np.unique(long_labels))
+            precision = precision_score(float_preds.data, long_labels, average='weighted',
                                         labels=np.unique(long_labels))
-            recall = recall_score(float_preds.detach().data, long_labels, average='weighted',
+            recall = recall_score(float_preds.data, long_labels, average='weighted',
                                   labels=np.unique(long_labels))
             epoch_loss = epoch_loss + loss
             epoch_acc = epoch_acc + accuracy
