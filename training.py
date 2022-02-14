@@ -87,8 +87,8 @@ if to_train:
             loss2 = Variable(loss2, requires_grad=True)
             loss = loss1.detach().item() + loss2.detach().item()
             print(f"Loss: {loss}")
-            #print(f"float_preds = {float_preds}")
-            #print(f"labels = {labels}")
+            # print(f"float_preds = {float_preds}")
+            # print(f"labels = {labels}")
             accuracy = accuracy_score(float_preds.detach().data, long_labels)
             f1 = f1_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
             precision = precision_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
@@ -101,7 +101,6 @@ if to_train:
             epoch_f1 = epoch_f1 + f1
             epoch_precision = epoch_precision + precision
             epoch_recall = epoch_recall + recall
-
 
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
         train_f1, train_precision = epoch_f1 / len(train_loader), epoch_precision / len(train_loader)

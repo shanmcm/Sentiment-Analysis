@@ -14,14 +14,13 @@ import numpy as np
 
 
 class SentimentAnalysis(nn.ModuleList):
-    def __init__(self, batch_size, hidden_dim, embedding_size,
-                 dropout_rate):  # aggiunto parametri che prima erano in args
+    def __init__(self, batch_size, hidden_dim, embedding_size, dropout_rate):
         super(SentimentAnalysis, self).__init__()
 
         self.batch_size = batch_size
         self.hidden_dim = hidden_dim
         self.input_size = embedding_size
-        self.num_classes = 5
+        self.num_classes = params.NUM_CLASSES
         # Dropout
         self.dropout = nn.Dropout(dropout_rate)
         # Bi-LSTM
@@ -50,8 +49,6 @@ class SentimentAnalysis(nn.ModuleList):
         hs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2)
         cs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2)
 
-        #x = [32, 258, 768], ]#batchsize, padding, num_features
-
         # Weights initialization
         torch.nn.init.kaiming_normal_(hs_forward)
         torch.nn.init.kaiming_normal_(cs_forward)
@@ -66,7 +63,7 @@ class SentimentAnalysis(nn.ModuleList):
         # Unfolding Bi-LSTM
         # Forward
         for i in range(x.size(1)):
-            inp = x[:, i, :] #32x768
+            inp = x[:, i, :]
             hs_forward, cs_forward = self.lstm_cell_forward(inp, (hs_forward, cs_forward))
             forward = forward + [hs_forward]
 
@@ -81,11 +78,9 @@ class SentimentAnalysis(nn.ModuleList):
         for fwd, bwd in zip(forward, backward):
             input_tensor = torch.cat((fwd, bwd), 1)
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))
-            #hs_lstm = self.dropout(hs_lstm)
             hidden_states_lstm = torch.cat((hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
 
         hs_lstm = self.attention(hidden_states_lstm)
-        # Last hidden state is passed through a linear layer
         hs_lstm = self.dropout(hs_lstm)
         hs_lstm = self.fc(hs_lstm)
         hs_lstm = self.relu(hs_lstm)
