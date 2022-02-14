@@ -41,6 +41,7 @@ lr = params.LR
 epochs = params.NUM_EPOCHS
 best_loss = float('inf')
 
+
 train_loader = DataLoader(train_ds, batch_size=params.BATCH_SIZE, collate_fn=dataset.collate_batch,
                           shuffle=True, num_workers=0, drop_last=True)
 # Build the model

@@ -63,6 +63,7 @@ class SentimentAnalysis(nn.ModuleList):
         forward = []
         backward = []
 
+
         # Unfolding Bi-LSTM
         # Forward
         for i in range(x.size(1)):
