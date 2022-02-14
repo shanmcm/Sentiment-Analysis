@@ -28,7 +28,6 @@ print(f"Preparing...")
 ds = dataset.AmazonDataset()  # fare prova con anche dataset non caricato
 ds.load_dataset()
 ds.filter()
-# ds.undersampling()
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
 weights = torch.Tensor(weights)
 train_ds, test_ds = train_val_dataset(ds)
@@ -56,6 +55,7 @@ optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
 
 to_train = True
 ce = nn.CrossEntropyLoss(weight=weights)
+bce = nn.BCEWithLogitsLoss(pos_weight=weights)
 mse = nn.MSELoss()
 softmax = torch.nn.Softmax(dim=1)
 
@@ -65,7 +65,6 @@ if to_train:
     for epoch in range(epochs):
         # training
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
-        print(f"epoch = {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
             print(f"epoch = {epoch}, idxs = {idxs}")
             gc.collect()
@@ -75,23 +74,24 @@ if to_train:
             predictions = lstm_model(batch)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
-            loss1 = 0.5 * ce(predictions, long_labels)
+            # loss1 = 0.5 * ce(predictions, long_labels)
+            # loss1 = 0.5 * bce(predictions, nn.functional.one_hot(long_labels).float())
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            loss2 = 0.5 * mse(float_preds, labels)
-            loss1 = Variable(loss1, requires_grad=True)
+            loss2 = torch.sqrt(mse(float_preds, labels))
+            # loss1 = Variable(loss1, requires_grad=True)
             loss2 = Variable(loss2, requires_grad=True)
             print(f"float_preds = {float_preds}")
             print(f"labels = {labels}")
             accuracy = accuracy_score(float_preds.detach().data, long_labels)
-            f1 = f1_score(float_preds.detach().data, long_labels, average='weighted')
-            precision = precision_score(float_preds.detach().data, long_labels, average='weighted')
-            recall = recall_score(float_preds.detach().data, long_labels, average='weighted')
-            loss1.backward()
+            f1 = f1_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
+            precision = precision_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
+            recall = recall_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
+            # loss1.backward()
             loss2.backward()
             optimizer.step()
-            loss = loss1.detach().item() + loss2.detach().item()
-            print(f"Accuracy = {accuracy}, f1 score = {f1}, loss = {loss}")
+            # loss = loss1.detach().item() + loss2.detach().item()
+            loss = loss2.detach().item()
             epoch_loss = epoch_loss + loss
             epoch_acc = epoch_acc + accuracy
             epoch_f1 = epoch_f1 + f1
