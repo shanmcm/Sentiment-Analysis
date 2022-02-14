@@ -41,13 +41,13 @@ class SentimentAnalysis(nn.ModuleList):
         self.dropout2 = nn.Dropout(dropout_rate)
 
     def forward(self, x):
-        hs_forward = torch.zeros(x.size(0), self.hidden_dim)
-        cs_forward = torch.zeros(x.size(0), self.hidden_dim)
-        hs_backward = torch.zeros(x.size(0), self.hidden_dim)
-        cs_backward = torch.zeros(x.size(0), self.hidden_dim)
+        hs_forward = torch.zeros(x.size(0), self.hidden_dim, device=params.DEVICE)
+        cs_forward = torch.zeros(x.size(0), self.hidden_dim, device=params.DEVICE)
+        hs_backward = torch.zeros(x.size(0), self.hidden_dim, device=params.DEVICE)
+        cs_backward = torch.zeros(x.size(0), self.hidden_dim, device=params.DEVICE)
 
-        hs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2)
-        cs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2)
+        hs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2, device=params.DEVICE)
+        cs_lstm = torch.zeros(x.size(0), self.hidden_dim * 2, device=params.DEVICE)
 
         # Weights initialization
         torch.nn.init.kaiming_normal_(hs_forward)
@@ -74,7 +74,7 @@ class SentimentAnalysis(nn.ModuleList):
             backward = backward + [hs_backward]
         backward.reverse()
         # LSTM
-        hidden_states_lstm = torch.Tensor()
+        hidden_states_lstm = torch.tensor((),device=params.DEVICE)
         for fwd, bwd in zip(forward, backward):
             input_tensor = torch.cat((fwd, bwd), 1)
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))

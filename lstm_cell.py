@@ -11,11 +11,11 @@ class LSTMCell(nn.Module):
         super(LSTMCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.W = Parameter(torch.randn(4 * hidden_size, input_size))  # w_ih
-        self.U = Parameter(torch.randn(4 * hidden_size, hidden_size))  # w_hh
-        self.V = Parameter(torch.randn(4 * hidden_size, cell_size))
-        self.bias_ih = Parameter(torch.randn(4 * hidden_size))
-        self.cell_state = Parameter(torch.zeros(params.BATCH_SIZE, cell_size))
+        self.W = Parameter(torch.randn(4 * hidden_size, input_size, device=params.DEVICE))  # w_ih
+        self.U = Parameter(torch.randn(4 * hidden_size, hidden_size, device=params.DEVICE))  # w_hh
+        self.V = Parameter(torch.randn(4 * hidden_size, cell_size, device=params.DEVICE))
+        self.bias_ih = Parameter(torch.randn(4 * hidden_size, device=params.DEVICE))
+        self.cell_state = Parameter(torch.zeros(params.BATCH_SIZE, cell_size, device=params.DEVICE))
 
     def forward(self, input_data, state):  # state = (hx, cx)
         tmp1 = torch.mm(input_data, self.W.t())  # 32x3072 X  3072x4h -> 32x4h

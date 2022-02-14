@@ -8,14 +8,14 @@ from torch.utils.data import Subset
 from torch.autograd import Variable
 import dataset
 import net
-import easy_net
 import params
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 from sklearn.utils import class_weight
-
+import warnings
+warnings.filterwarnings("ignore")
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -70,7 +70,6 @@ if to_train:
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
         print(f"Epoch: {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
-            #print(f"epoch = {epoch}, idxs = {idxs}")
             gc.collect()
             optimizer.zero_grad()
             batch = batch.to(device)
@@ -82,25 +81,28 @@ if to_train:
             # loss1 = 0.5 * bce(predictions, nn.functional.one_hot(long_labels).float())
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            loss2 = torch.sqrt(mse(float_preds, labels))
+            loss2 = 0.5 * torch.sqrt(mse(float_preds, labels))
             loss1 = Variable(loss1, requires_grad=True)
             loss2 = Variable(loss2, requires_grad=True)
-            loss = loss1.detach().item() + loss2.detach().item()
-            print(f"Loss: {loss}")
-            # print(f"float_preds = {float_preds}")
-            # print(f"labels = {labels}")
-            accuracy = accuracy_score(float_preds.detach().data, long_labels)
-            f1 = f1_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
-            precision = precision_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
-            recall = recall_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
             loss1.backward()
             loss2.backward()
             optimizer.step()
+            loss = loss1.detach().item() + loss2.detach().item()
+            del loss1
+            del loss2
+            accuracy = accuracy_score(float_preds.detach().data, long_labels)
+            f1 = f1_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
+            precision = precision_score(float_preds.detach().data, long_labels, average='weighted',
+                                        labels=np.unique(long_labels))
+            recall = recall_score(float_preds.detach().data, long_labels, average='weighted',
+                                  labels=np.unique(long_labels))
             epoch_loss = epoch_loss + loss
             epoch_acc = epoch_acc + accuracy
             epoch_f1 = epoch_f1 + f1
             epoch_precision = epoch_precision + precision
             epoch_recall = epoch_recall + recall
+            if not idxs % 10:
+                print(f"Loss: {loss}, Accuracy: {accuracy}, F1: {f1}")
 
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
         train_f1, train_precision = epoch_f1 / len(train_loader), epoch_precision / len(train_loader)
