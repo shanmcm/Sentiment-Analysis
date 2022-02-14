@@ -85,7 +85,7 @@ if to_train:
             loss2 = torch.sqrt(mse(float_preds, labels))
             loss1 = Variable(loss1, requires_grad=True)
             loss2 = Variable(loss2, requires_grad=True)
-            loss = loss1 + loss2
+            loss = loss1.detach().item() + loss2.detach().item()
             print(f"Loss: {loss}")
             #print(f"float_preds = {float_preds}")
             #print(f"labels = {labels}")
@@ -96,9 +96,6 @@ if to_train:
             loss1.backward()
             loss2.backward()
             optimizer.step()
-            # loss = loss1.detach().item() + loss2.detach().item()
-            #loss = loss1.detach().item() + loss2.detach().item()
-            #print(f"Loss: {loss}")
             epoch_loss = epoch_loss + loss
             epoch_acc = epoch_acc + accuracy
             epoch_f1 = epoch_f1 + f1
