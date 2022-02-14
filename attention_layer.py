@@ -4,6 +4,7 @@ from torch.nn.parameter import Parameter
 from torch.nn.functional import normalize
 import params
 
+
 class AttentionLayer(nn.Module):
     def __init__(self, hidden_dim):
         super().__init__()
@@ -18,7 +19,6 @@ class AttentionLayer(nn.Module):
     def forward(self, hidden_states):
         self.hidden_states = hidden_states
         self.hidden_states.to(params.DEVICE)
-        # hidden_states = [batch_size, n_parole, embedding_dim]
         u_w = torch.randn(self.hidden_states.size()[1], device=params.DEVICE).unsqueeze(0)
         s = torch.tensor((), device=params.DEVICE)
         for i in range(len(self.hidden_states)):

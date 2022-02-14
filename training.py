@@ -53,43 +53,44 @@ lstm_model = net.SentimentAnalysis(batch_size,
 lstm_model.to(device)
 # optimization algorithm
 optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
-
 to_train = True
 ce = nn.CrossEntropyLoss(weight=weights)
 bce = nn.BCEWithLogitsLoss(pos_weight=weights)
 mse = nn.MSELoss()
 softmax = torch.nn.Softmax(dim=1)
 
-lstm_model.train()
+lstm_model = lstm_model.train()
 
 # train and validate
 print("Start running")
-if to_train:
+with torch.enable_grad():
     for epoch in range(epochs):
         # training
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
         print(f"Epoch: {epoch}")
         for idxs, (batch, labels) in enumerate(train_loader):
-            gc.collect()
             optimizer.zero_grad()
             batch = batch.to(device)
             labels = labels.to(device)
             predictions = lstm_model(batch).to('cpu')
+            print(list(lstm_model.parameters())[0].grad)
             labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
             # loss1 = 0.5 * ce(predictions, long_labels)
-            loss1 = 0.5 * bce(predictions, nn.functional.one_hot(long_labels).float())
+            # loss1 = 0.5 * bce(predictions, nn.functional.one_hot(long_labels).float())
+            loss1 = ce(predictions, long_labels)
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            loss2 = 0.5 * torch.sqrt(mse(float_preds, labels))
+            # loss2 = 0.5 * torch.sqrt(mse(float_preds, labels))
+            # loss2.requires_grad = True
             loss1 = Variable(loss1, requires_grad=True)
-            loss2 = Variable(loss2, requires_grad=True)
+            # loss2 = Variable(loss2, requires_grad=True)
             loss1.backward()
-            loss2.backward()
+            # loss2.backward()
             optimizer.step()
-            loss = loss1.detach().item() + loss2.detach().item()
+            loss = loss1.item()  # + loss2.item()
             del loss1
-            del loss2
+            # del loss2
             accuracy = accuracy_score(float_preds.detach().data, long_labels)
             f1 = f1_score(float_preds.detach().data, long_labels, average='weighted', labels=np.unique(long_labels))
             precision = precision_score(float_preds.detach().data, long_labels, average='weighted',
