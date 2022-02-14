@@ -26,8 +26,8 @@ class SentimentAnalysis(nn.ModuleList):
         self.dropout = nn.Dropout(dropout_rate)
         # Bi-LSTM
         # Forward and backward
-        self.lstm_cell_forward = nn.LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
-        self.lstm_cell_backward = nn.LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
+        self.lstm_cell_forward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
+        self.lstm_cell_backward = LSTMCell(self.input_size, self.hidden_dim, self.hidden_dim)  # x,h,c
         # LSTM layer
         self.lstm_cell = LSTMCell(self.hidden_dim * 2, self.hidden_dim * 2, self.hidden_dim * 2)
 
@@ -53,16 +53,15 @@ class SentimentAnalysis(nn.ModuleList):
         #x = [32, 258, 768], ]#batchsize, padding, num_features
 
         # Weights initialization
-        #torch.nn.init.kaiming_normal_(hs_forward)
-        #torch.nn.init.kaiming_normal_(cs_forward)
-        #torch.nn.init.kaiming_normal_(hs_backward)
-        #torch.nn.init.kaiming_normal_(cs_backward)
-        #torch.nn.init.kaiming_normal_(hs_lstm)
-        #torch.nn.init.kaiming_normal_(cs_lstm)
+        torch.nn.init.kaiming_normal_(hs_forward)
+        torch.nn.init.kaiming_normal_(cs_forward)
+        torch.nn.init.kaiming_normal_(hs_backward)
+        torch.nn.init.kaiming_normal_(cs_backward)
+        torch.nn.init.kaiming_normal_(hs_lstm)
+        torch.nn.init.kaiming_normal_(cs_lstm)
 
         forward = []
         backward = []
-
 
         # Unfolding Bi-LSTM
         # Forward
@@ -71,7 +70,6 @@ class SentimentAnalysis(nn.ModuleList):
             hs_forward, cs_forward = self.lstm_cell_forward(inp, (hs_forward, cs_forward))
             forward = forward + [hs_forward]
 
-        a = i
         # Backward
         for i in reversed(range(x.size(1))):
             inp = x[:, i, :]
@@ -86,7 +84,7 @@ class SentimentAnalysis(nn.ModuleList):
             #hs_lstm = self.dropout(hs_lstm)
             hidden_states_lstm = torch.cat((hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
 
-        #hs_lstm = self.attention(hidden_states_lstm)
+        hs_lstm = self.attention(hidden_states_lstm)
         # Last hidden state is passed through a linear layer
         hs_lstm = self.dropout(hs_lstm)
         hs_lstm = self.fc(hs_lstm)
