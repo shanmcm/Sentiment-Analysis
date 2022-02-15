@@ -15,9 +15,18 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
 from sklearn.utils import class_weight
 from torch.optim.lr_scheduler import ExponentialLR
+
 import warnings
+
 warnings.filterwarnings("ignore")
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+def make_weights_for_balanced_classes(data, weight_per_class):
+    weight = [0] * len(data)
+    for idx, val in enumerate(data):
+        weight[idx] = weight_per_class[val - 1]
+    return weight
 
 
 def train_val_dataset(d, val_split=0.25):
@@ -52,7 +61,12 @@ lr = params.LR
 epochs = params.NUM_EPOCHS
 best_loss = float('inf')
 train_labels = torch.Tensor(ds.labels[train_ds.indices].to_numpy())
-sampler = dataset.StratifiedSampler(class_vector=train_labels, batch_size=params.BATCH_SIZE)
+train_data = ds.data[train_ds.indices]
+
+loader_weights = make_weights_for_balanced_classes(ds.labels[train_ds.indices].to_numpy(), weights)
+loader_weights = torch.DoubleTensor(loader_weights)
+sampler = torch.utils.data.sampler.WeightedRandomSampler(loader_weights, len(loader_weights))
+
 train_loader = DataLoader(train_ds, sampler=sampler, collate_fn=dataset.collate_batch, batch_size=batch_size)
 # Build the model
 lstm_model = net.SentimentAnalysis(batch_size, hidden_dim, embedding_size, dropout_rate)
@@ -94,7 +108,6 @@ with torch.enable_grad():
             loss = loss.item()
             del loss1
             del loss2
-            print(confusion_matrix(float_preds.data, long_labels))
             accuracy = accuracy_score(float_preds.data, long_labels)
             f1 = f1_score(float_preds.data, long_labels, average='weighted', labels=np.unique(long_labels))
             precision = precision_score(float_preds.data, long_labels, average='weighted',
@@ -108,6 +121,7 @@ with torch.enable_grad():
             epoch_recall = epoch_recall + recall
             if not idxs % 10:
                 print(f"Loss: {loss}, Accuracy: {accuracy}, F1: {f1}")
+                print(confusion_matrix(float_preds.data, long_labels))
         scheduler.step()
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
         train_f1, train_precision = epoch_f1 / len(train_loader), epoch_precision / len(train_loader)
