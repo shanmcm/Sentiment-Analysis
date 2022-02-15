@@ -157,9 +157,12 @@ class AmazonDataset(Dataset):
                     token_embeddings = torch.squeeze(token_embeddings, dim=1)
                     token_embeddings = token_embeddings.permute(1, 0, 2)
                     for j, token in enumerate(token_embeddings):
-                        new_token = torch.stack((token[-1], token[-2], token[-3], token[-4]))
-                        avg_vec = torch.mean(new_token, dim=0)
-                        embedded_data[test_chunk[j]] = avg_vec
+                        if params.EMBEDDING_TYPE == 'avg':
+                            new_token = torch.stack((token[-1], token[-2], token[-3], token[-4]))
+                            vec = torch.mean(new_token, dim=0)
+                        elif params.EMBEDDING_TYPE == 'concat':
+                            vec = torch.cat((token[-1], token[-2], token[-3], token[-4]), dim=0)
+                        embedded_data[test_chunk[j]] = vec
             else:
                 self.to_remove.append(i)
     

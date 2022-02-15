@@ -20,3 +20,4 @@ SEED = 42
 MAX_SENT_LEN = 500
 NUM_FEATURES = 768
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+EMBEDDING_TYPE = 'concat' # 'avg'
