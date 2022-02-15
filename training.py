@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.utils import class_weight
 from torch.optim.lr_scheduler import ExponentialLR
 from collections import Counter
@@ -50,7 +50,6 @@ ds.load_dataset()
 ds.filter()
 print("Filtered dataset")
 len_ds = ds.__len__()
-# weights = {k: (1-(v/len_ds)) for (k, v) in Counter(ds.labels).items()}
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
 weights = torch.Tensor(list(weights.values()))
 train_ds, test_ds = train_val_dataset(ds)
@@ -148,7 +147,6 @@ test_loader = DataLoader(test_ds, batch_size=params.BATCH_SIZE, collate_fn=datas
 with torch.no_grad():
     for idxs, (batch, labels) in enumerate(test_loader):
         predictions = lstm_model(batch)
-        labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
         long_labels = labels.type(torch.LongTensor)
         loss1 = 0.5 * ce(predictions, long_labels)
         float_preds = torch.argmax(softmax(predictions), 1)

@@ -1,6 +1,4 @@
 import os
-
-import nltk
 import numpy as np
 import pandas as pd
 import pickle
@@ -10,13 +8,11 @@ from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import StratifiedKFold
-from torch.utils.data import Dataset, Sampler
+from torch.utils.data import Dataset
 from transformers import BertModel, BertTokenizer
 from torch.nn.utils.rnn import pad_sequence
 import torch
 import params
-from sklearn.model_selection import StratifiedShuffleSplit
 
 
 def splitter(s, n):
@@ -194,7 +190,7 @@ class AmazonDataset(Dataset):
         minimum_len = self.labels.value_counts().min()
         filtered_idxs = []
         for lab in range(5):
-            idxs_lab = np.random.choice(self.labels.index[self.labels == lab+1], minimum_len, replace=False)
+            idxs_lab = np.random.choice(self.labels.index[self.labels == lab], minimum_len, replace=False)
             filtered_idxs = np.append(filtered_idxs, idxs_lab)
         to_remove = set(self.labels.index) - set(filtered_idxs)
         self.data.drop(to_remove, inplace=True)
@@ -212,3 +208,4 @@ class AmazonDataset(Dataset):
             sent = get_sentiment(token)
             embedding.append(self.embedded_words_dict[token] * sent)
         return embedding, lab
+
