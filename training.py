@@ -15,7 +15,7 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.utils import class_weight
 from torch.optim.lr_scheduler import ExponentialLR
-from collections import Counter
+import matplotlib.pyplot as plt
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -129,7 +129,10 @@ with torch.enable_grad():
             epoch_recall = epoch_recall + recall
             if not idxs % 10:
                 print(f"Loss: {loss}, Accuracy: {accuracy}, F1: {f1}")
-                print(confusion_matrix(float_preds.data, long_labels))
+                cm = confusion_matrix(float_preds.data, long_labels, labels=[0,1,2,3,4])
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0,1,2,3,4])
+                disp.plot()
+                plt.show()
         scheduler.step()
         train_loss, train_acc = epoch_loss / len(train_loader), epoch_acc / len(train_loader)
         train_f1, train_precision = epoch_f1 / len(train_loader), epoch_precision / len(train_loader)
