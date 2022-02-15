@@ -59,8 +59,8 @@ def collate_batch(batch):
         text = torch.stack(text)  # converts list of tensors to tensor of tensors
         text_list.append(text)
     label_list = torch.tensor(label_list, dtype=torch.int64)
-    text_list = pad_sequence(text_list, batch_first=True, padding_value=0)  # .size()
-    return text_list, label_list
+    padded_text_list = pad_sequence(text_list, batch_first=True, padding_value=0)  # .size()
+    return padded_text_list, label_list
 
 
 class AmazonDataset(Dataset):

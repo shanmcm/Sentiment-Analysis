@@ -20,9 +20,18 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def train_val_dataset(d, val_split=0.25):
-    train_idx, val_idx = train_test_split(list(d.data.index), test_size=val_split, stratify=d.labels)
-    return Subset(d, train_idx), Subset(d, val_idx)
+    train_idx, val_idx = train_test_split(list(d.data.index), test_size=val_split)
+    # associa ad ogni elemento del dataset il numero di parole, e ordina in base al numero di parole
+    len_train = [(i, len(d.data[i].split(" "))) for i in train_idx]
+    len_train = sorted(len_train, key=lambda el: el[1], reverse=True)
+    # definisco indici ordinati da passare poi al dataloader
+    train_idx = [el[0] for el in len_train]
+    # stessa cosa per il test
+    len_val = [(i, len(d.data[i].split(" "))) for i in val_idx]
+    len_val = sorted(len_val, key=lambda el: el[1], reverse=True)
 
+    val_idx = [el[0] for el in len_val]
+    return Subset(d, train_idx), Subset(d, val_idx)
 
 print(f"Preparing...")
 ds = dataset.AmazonDataset()
