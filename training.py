@@ -69,7 +69,8 @@ loader_weights = make_weights_for_balanced_classes(ds.labels[train_ds.indices].t
 loader_weights = torch.DoubleTensor(loader_weights)
 sampler = torch.utils.data.sampler.WeightedRandomSampler(loader_weights, len(loader_weights))
 
-train_loader = DataLoader(train_ds, sampler=sampler, collate_fn=dataset.collate_batch, batch_size=batch_size)
+train_loader = DataLoader(train_ds, num_workers=4, collate_fn=dataset.collate_batch,
+                          batch_size=batch_size, drop_last=True)
 # Build the model
 lstm_model = net.SentimentAnalysis(batch_size, hidden_dim, embedding_size, dropout_rate)
 lstm_model.to(device)
@@ -100,12 +101,14 @@ with torch.enable_grad():
             attention = attention.detach()
             scores_by_w = [[(word, attention[j][i]) for i, j, word in s] for s in important_words]
             # ds.update_ranking(scores_by_w)
-            predictions.to('cpu')
+            predictions = predictions.to('cpu')
             long_labels = labels.type(torch.LongTensor)
             loss1 = ce(predictions, long_labels) * 0.5
             # loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  # * 0.5
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
+            # float_preds.requires_grad = True
+            # loss2 = torch.sqrt(mse(float_preds, labels)) * 0.5
             ohe_labels = nn.functional.one_hot(long_labels).float()
             sm_preds = softmax(predictions)
             loss2 = torch.sqrt(mse(sm_preds, ohe_labels)) * 0.5
@@ -151,8 +154,8 @@ epoch_acc = 0
 
 lstm_model.eval()
 
-test_loader = DataLoader(test_ds, batch_size=params.BATCH_SIZE, collate_fn=dataset.collate_batch,
-                         shuffle=True, num_workers=0, drop_last=True)
+test_loader = DataLoader(test_ds, num_workers=4, collate_fn=dataset.collate_batch,
+                         batch_size=batch_size, drop_last=True)
 
 with torch.no_grad():
     for idxs, (batch, labels) in enumerate(test_loader):
@@ -167,6 +170,14 @@ with torch.no_grad():
         accuracy = accuracy_score(float_preds.data, long_labels)
         epoch_loss += loss
         epoch_acc += accuracy
+        epoch_f1 = epoch_f1 + f1
+        epoch_precision = epoch_precision + precision
+        epoch_recall = epoch_recall + recall
 
-test_loss, test_acc = epoch_loss / len(test_loader), epoch_acc / len(test_loader)
-print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc * 100:.2f}%')
+    test_loss, test_acc = epoch_loss / len(test_loader), epoch_acc / len(test_loader)
+    test_f1, test_precision = epoch_f1 / len(test_loader), epoch_precision / len(test_loader)
+    test_recall = epoch_recall / len(test_loader)
+
+    print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc * 100:.2f}%')
+    print(f"\tF1 = {test_f1}, precision = {test_precision}, recall = {test_recall}")
+
