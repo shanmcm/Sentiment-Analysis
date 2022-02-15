@@ -91,7 +91,6 @@ with torch.enable_grad():
     for epoch in range(epochs):
         # training
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
-        print(f"Epoch: {epoch}")
         for idxs, (batch, labels, sentences_list) in enumerate(train_loader):
             important_words = [[(i, cnt, x) for cnt, x in enumerate(sentences_list[i]) if
                                 x.replace("#", "") in ds.ranking["term"].to_numpy()] for i in
@@ -100,7 +99,7 @@ with torch.enable_grad():
             predictions, attention = lstm_model(batch)
             attention = attention.detach()
             scores_by_w = [[(word, attention[j][i]) for i, j, word in s] for s in important_words]
-            # ds.update_ranking(scores_by_w)
+            ds.update_ranking(scores_by_w)
             predictions = predictions.to('cpu')
             long_labels = labels.type(torch.LongTensor)
             loss1 = ce(predictions, long_labels) * 0.5

@@ -2,7 +2,7 @@ import nltk
 import os
 import torch
 path_ds = os.getcwd()
-pickled_name = "amazonDataset_concat4layers.pkl"
+pickled_name = "amazonDataset_avg.pkl"
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('corpus')
@@ -18,5 +18,5 @@ LR = 1e-3
 DROPOUT_RATE = 0.4
 SEED = 42
 MAX_SENT_LEN = 500
-NUM_FEATURES = 3072  # 768
+NUM_FEATURES = 768
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
