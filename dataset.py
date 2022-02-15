@@ -46,6 +46,7 @@ def get_sentiment(word: str) -> float:
     if ss:
         score = swn.senti_synset(ss.__getitem__(0).name())
         word_score = (score.pos_score() + score.neg_score()) / 2
+        word_score = word_score if word_score != 0 else 1.
         return word_score
     else:
         return 1.
@@ -111,7 +112,6 @@ class AmazonDataset(Dataset):
         data = []
         for col, term in enumerate(terms):
             data.append((term, sums[0, col]))
-
         ranking = pd.DataFrame(data, columns=['term', 'rank'])
         ranking.sort_values(by=['rank'], inplace=True)
         ranking = ranking[:160]
@@ -209,5 +209,6 @@ class AmazonDataset(Dataset):
         tokenized_text = self.tokenizer.tokenize(sent)
         for token in tokenized_text:
             sent = get_sentiment(token)
-            embedding.append(self.embedded_words_dict[token]*sent)
+            print(sent)
+            embedding.append(self.embedded_words_dict[token] * sent)
         return embedding, lab

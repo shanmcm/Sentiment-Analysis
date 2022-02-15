@@ -28,7 +28,6 @@ print(f"Preparing...")
 ds = dataset.AmazonDataset()
 ds.load_dataset()
 ds.filter()
-# ds.undersampling()
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
 weights = torch.Tensor(weights)
 train_ds, test_ds = train_val_dataset(ds)
@@ -38,7 +37,7 @@ batch_size = params.BATCH_SIZE
 hidden_dim = 128
 embedding_size = params.NUM_FEATURES
 dropout_rate = params.DROPOUT_RATE
-lr = 0.001 # params.LR
+lr = 1e-8  # params.LR
 epochs = params.NUM_EPOCHS
 best_loss = float('inf')
 

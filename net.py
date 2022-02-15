@@ -50,12 +50,12 @@ class SentimentAnalysis(nn.Module):
         cs_lstm = Parameter(torch.zeros(x.size(0), self.hidden_dim * 2, device=params.DEVICE))
 
         # Weights initialization
-        torch.nn.init.kaiming_normal_(hs_forward)
-        torch.nn.init.kaiming_normal_(cs_forward)
-        torch.nn.init.kaiming_normal_(hs_backward)
-        torch.nn.init.kaiming_normal_(cs_backward)
-        torch.nn.init.kaiming_normal_(hs_lstm)
-        torch.nn.init.kaiming_normal_(cs_lstm)
+        # torch.nn.init.kaiming_normal_(cs_forward)
+        # torch.nn.init.kaiming_normal_(hs_backward)
+        # torch.nn.init.kaiming_normal_(cs_backward)
+        # torch.nn.init.kaiming_normal_(hs_lstm)
+        # torch.nn.init.kaiming_normal_(hs_forward)
+        # torch.nn.init.kaiming_normal_(cs_lstm)
 
         forward = []
         backward = []
