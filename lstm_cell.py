@@ -23,7 +23,6 @@ class LSTMCell(nn.Module):
 
         h_tmp = state[0]
         tmp3 = torch.mm(h_tmp, self.U.t())
-
         c_tmp = self.cell_state
         tmp4 = torch.mm(c_tmp, self.V.t())
         gates = (tmp2 + tmp3 + tmp4)

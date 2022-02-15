@@ -62,7 +62,7 @@ class SentimentAnalysis(nn.Module):
 
         # Unfolding Bi-LSTM
         # Forward
-        for i in range(x.size(1)):
+        for i in range(x.size(1)):  # [Frase1 Prova, Frase2] -> [ [emb(frase1), emb(prova)], [emb(frase2), embvuoto]
             inp = x[:, i, :]
             hs_forward, cs_forward = self.lstm_cell_forward(inp, (hs_forward, cs_forward))
             forward.append(hs_forward)

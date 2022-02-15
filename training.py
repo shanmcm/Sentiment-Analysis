@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
+from sklearn.metrics import confusion_matrix
 from sklearn.utils import class_weight
 from torch.optim.lr_scheduler import ExponentialLR
 import warnings
@@ -33,6 +34,7 @@ def train_val_dataset(d, val_split=0.25):
     val_idx = [el[0] for el in len_val]
     return Subset(d, train_idx), Subset(d, val_idx)
 
+
 print(f"Preparing...")
 ds = dataset.AmazonDataset()
 ds.load_dataset()
@@ -46,12 +48,12 @@ batch_size = params.BATCH_SIZE
 hidden_dim = 128
 embedding_size = params.NUM_FEATURES
 dropout_rate = params.DROPOUT_RATE
-lr = 1e-8  # params.LR
+lr = params.LR
 epochs = params.NUM_EPOCHS
 best_loss = float('inf')
-
-train_loader = DataLoader(train_ds, batch_size=params.BATCH_SIZE, collate_fn=dataset.collate_batch,
-                          shuffle=True, num_workers=0, drop_last=True)
+train_labels = torch.Tensor(ds.labels[train_ds.indices].to_numpy())
+sampler = dataset.StratifiedSampler(class_vector=train_labels, batch_size=params.BATCH_SIZE)
+train_loader = DataLoader(train_ds, sampler=sampler, collate_fn=dataset.collate_batch, batch_size=batch_size)
 # Build the model
 lstm_model = net.SentimentAnalysis(batch_size, hidden_dim, embedding_size, dropout_rate)
 lstm_model.to(device)
@@ -59,7 +61,7 @@ lstm_model.to(device)
 # optimization algorithm
 optimizer = torch.optim.Adam(lstm_model.parameters(), lr=lr)
 scheduler = ExponentialLR(optimizer, gamma=0.9)
-ce = nn.CrossEntropyLoss()  # weight=weights)
+ce = nn.CrossEntropyLoss(weight=weights)
 bce = nn.BCEWithLogitsLoss(pos_weight=weights)
 mse = nn.MSELoss()
 softmax = torch.nn.Softmax(dim=1)
@@ -82,12 +84,9 @@ with torch.enable_grad():
             # loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  # * 0.5
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            float_preds.requires_grad = True
-
             ohe_labels = nn.functional.one_hot(long_labels).float()
             sm_preds = softmax(predictions)
             loss2 = torch.sqrt(mse(sm_preds, ohe_labels)) * 0.5
-            # loss2 = torch.sqrt(mse(float_preds, labels)) * 0.5
             loss = loss1 + loss2
             loss.backward()
             optimizer.step()
@@ -95,6 +94,7 @@ with torch.enable_grad():
             loss = loss.item()
             del loss1
             del loss2
+            print(confusion_matrix(float_preds.data, long_labels))
             accuracy = accuracy_score(float_preds.data, long_labels)
             f1 = f1_score(float_preds.data, long_labels, average='weighted', labels=np.unique(long_labels))
             precision = precision_score(float_preds.data, long_labels, average='weighted',
