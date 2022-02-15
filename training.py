@@ -159,8 +159,9 @@ test_loader = DataLoader(test_ds, num_workers=4, collate_fn=dataset.collate_batc
                          batch_size=batch_size, drop_last=True)
 
 with torch.no_grad():
-    for idxs, (batch, labels) in enumerate(test_loader):
-        predictions = lstm_model(batch)
+    for idxs, (batch, labels, _) in enumerate(test_loader):
+        predictions, _ = lstm_model(batch)
+        predictions = predictions.to("cpu")
         long_labels = labels.type(torch.LongTensor)
         loss1 = 0.5 * ce(predictions, long_labels)
         float_preds = torch.argmax(softmax(predictions), 1)
