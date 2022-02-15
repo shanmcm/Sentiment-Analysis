@@ -56,7 +56,7 @@ train_ds, test_ds = train_val_dataset(ds)
 ds.get_tfidf()
 # Define parameters
 batch_size = params.BATCH_SIZE
-hidden_dim = 128
+hidden_dim = 256
 embedding_size = params.NUM_FEATURES
 dropout_rate = params.DROPOUT_RATE
 lr = params.LR
@@ -107,11 +107,12 @@ with torch.enable_grad():
             # loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  # * 0.5
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
-            # float_preds.requires_grad = True
-            # loss2 = torch.sqrt(mse(float_preds, labels)) * 0.5
-            ohe_labels = nn.functional.one_hot(long_labels).float()
-            sm_preds = softmax(predictions)
-            loss2 = torch.sqrt(mse(sm_preds, ohe_labels)) * 0.5
+            float_preds.requires_grad = True
+            labels = labels.type(torch.FloatTensor)
+            loss2 = torch.sqrt(mse(float_preds, labels)) * 0.5
+            #ohe_labels = nn.functional.one_hot(long_labels).float()
+            #sm_preds = softmax(predictions)
+            #loss2 = torch.sqrt(mse(sm_preds, ohe_labels)) * 0.5
             loss = loss1 + loss2
             loss.backward()
             optimizer.step()
@@ -146,6 +147,7 @@ with torch.enable_grad():
             torch.save(lstm_model.state_dict(), 'saved_weights_BiLSTM.pt')
         print(f'Epoch; {epoch} | Train Loss: {train_loss:.3f} | Train Acc: {train_acc * 100:.2f}%')
         print(f"\tF1 = {train_f1}, precision = {train_precision}, recall = {train_recall}")
+
 
 # load weights and make predictions
 lstm_model.load_state_dict(torch.load("saved_weights_BiLSTM.pt"))
