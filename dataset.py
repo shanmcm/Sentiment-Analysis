@@ -184,6 +184,7 @@ class AmazonDataset(Dataset):
                 self.to_remove = amazon_ds.to_remove
                 self.maximum_embedding_len = amazon_ds.maximum_embedding_len
                 del amazon_ds
+        self.labels = self.labels.map(lambda x: x - 1)
 
     def filter(self):
         self.data.drop(self.to_remove, inplace=True)

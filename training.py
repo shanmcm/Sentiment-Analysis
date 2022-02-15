@@ -15,7 +15,7 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
 from sklearn.utils import class_weight
 from torch.optim.lr_scheduler import ExponentialLR
-
+from collections import Counter
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -48,8 +48,11 @@ print(f"Preparing...")
 ds = dataset.AmazonDataset()
 ds.load_dataset()
 ds.filter()
+print("Filtered dataset")
+len_ds = ds.__len__()
+# weights = {k: (1-(v/len_ds)) for (k, v) in Counter(ds.labels).items()}
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
-weights = torch.Tensor(weights)
+weights = torch.Tensor(list(weights.values()))
 train_ds, test_ds = train_val_dataset(ds)
 
 # Define parameters
@@ -92,7 +95,6 @@ with torch.enable_grad():
         for idxs, (batch, labels) in enumerate(train_loader):
             batch = batch.to(device)
             predictions = lstm_model(batch).to('cpu')
-            labels = torch.Tensor([x - 1 for x in labels.data.numpy()])  # mapping classes 1-5 in 0-4
             long_labels = labels.type(torch.LongTensor)
             loss1 = ce(predictions, long_labels) * 0.5
             # loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  # * 0.5
