@@ -209,6 +209,5 @@ class AmazonDataset(Dataset):
         tokenized_text = self.tokenizer.tokenize(sent)
         for token in tokenized_text:
             sent = get_sentiment(token)
-            print(sent)
             embedding.append(self.embedded_words_dict[token] * sent)
         return embedding, lab
