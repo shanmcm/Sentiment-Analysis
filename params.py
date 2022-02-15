@@ -21,3 +21,5 @@ MAX_SENT_LEN = 500
 NUM_FEATURES = 768
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 EMBEDDING_TYPE = 'concat' # 'avg'
+LOSS1 = 'ce' # 'bce'
+LOSS2 = 'mse' # '1HEMSE'

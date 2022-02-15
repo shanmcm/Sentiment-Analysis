@@ -31,15 +31,11 @@ def make_weights_for_balanced_classes(data, weight_per_class):
 
 def train_val_dataset(d, val_split=0.25):
     train_idx, val_idx = train_test_split(list(d.data.index), test_size=val_split)
-    # associa ad ogni elemento del dataset il numero di parole, e ordina in base al numero di parole
     len_train = [(i, len(d.data[i].split(" "))) for i in train_idx]
     len_train = sorted(len_train, key=lambda el: el[1], reverse=True)
-    # definisco indici ordinati da passare poi al dataloader
     train_idx = [el[0] for el in len_train]
-    # stessa cosa per il test
     len_val = [(i, len(d.data[i].split(" "))) for i in val_idx]
     len_val = sorted(len_val, key=lambda el: el[1], reverse=True)
-
     val_idx = [el[0] for el in len_val]
     return Subset(d, train_idx), Subset(d, val_idx)
 
@@ -102,16 +98,22 @@ with torch.enable_grad():
             ds.update_ranking(scores_by_w)
             predictions = predictions.to('cpu')
             long_labels = labels.type(torch.LongTensor)
-            loss1 = ce(predictions, long_labels) * 0.5
-            # loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  # * 0.5
+            assert params.LOSS1 in ['ce', 'bce'], "Insert valid LOSS1"
+            if params.LOSS1 == 'ce':
+                loss1 = ce(predictions, long_labels) * 0.5
+            elif params.LOSS1 == 'bce':
+                loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  * 0.5
             float_preds = torch.argmax(softmax(predictions), 1)
             float_preds = float_preds.type(torch.FloatTensor)
             float_preds.requires_grad = True
             labels = labels.type(torch.FloatTensor)
-            loss2 = torch.sqrt(mse(float_preds, labels)) * 0.5
-            #ohe_labels = nn.functional.one_hot(long_labels).float()
-            #sm_preds = softmax(predictions)
-            #loss2 = torch.sqrt(mse(sm_preds, ohe_labels)) * 0.5
+            assert params.LOSS2 in ['mse', '1HEMSE'], "Insert valid LOSS2"
+            if params.LOSS2 == 'mse':
+                loss2 = torch.sqrt(mse(float_preds, labels)) * 0.5
+            elif params.LOSS2 == '1HEMSE':
+                ohe_labels = nn.functional.one_hot(long_labels).float()
+                sm_preds = softmax(predictions)
+                loss2 = torch.sqrt(mse(sm_preds, ohe_labels)) * 0.5
             loss = loss1 + loss2
             loss.backward()
             optimizer.step()
