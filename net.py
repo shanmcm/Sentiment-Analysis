@@ -80,10 +80,10 @@ class SentimentAnalysis(nn.Module):
             hs_lstm, cs_lstm = self.lstm_cell(input_tensor, (hs_lstm, cs_lstm))
             hidden_states_lstm = torch.cat((hidden_states_lstm, hs_lstm.unsqueeze(2)), dim=-1)
 
-        hs_lstm = self.attention(hidden_states_lstm)
+        hs_lstm, attention = self.attention(hidden_states_lstm)
         hs_lstm = self.dropout(hs_lstm)
         hs_lstm = self.fc(hs_lstm)
         hs_lstm = self.relu(hs_lstm)
         hs_lstm = self.dropout2(hs_lstm)
         out = self.linear(hs_lstm)
-        return out
+        return out, attention

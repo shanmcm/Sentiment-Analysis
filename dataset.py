@@ -49,14 +49,15 @@ def get_sentiment(word: str) -> float:
 
 
 def collate_batch(batch):
-    label_list, text_list, = [], []
-    for i, (text, label) in enumerate(batch):
+    label_list, text_list, sentences_list = [], [], []
+    for i, (text, label, idx) in enumerate(batch):
         label_list.append(label)
         text = torch.stack(text)  # converts list of tensors to tensor of tensors
         text_list.append(text)
+        sentences_list.append(idx)
     label_list = torch.tensor(label_list, dtype=torch.int64)
     padded_text_list = pad_sequence(text_list, batch_first=True, padding_value=0)  # .size()
-    return padded_text_list, label_list
+    return padded_text_list, label_list, sentences_list
 
 
 class AmazonDataset(Dataset):
@@ -109,9 +110,20 @@ class AmazonDataset(Dataset):
         for col, term in enumerate(terms):
             data.append((term, sums[0, col]))
         ranking = pd.DataFrame(data, columns=['term', 'rank'])
-        ranking.sort_values(by=['rank'], inplace=True)
+        ranking.sort_values(by=['rank'], inplace=True, ascending=False)
         ranking = ranking[:160]
         self.ranking = ranking
+        self.ranking["scores"] = 0.
+        self.ranking["counting"] = 0.
+
+    def update_ranking(self, scores_by_w):
+        for i in scores_by_w:
+            for j in i:
+                indice = self.ranking[self.ranking["term"] == j[0]].index
+                val = self.ranking[self.ranking["term"] == j[0]]["scores"].values[0]
+                count = self.ranking[self.ranking["term"] == j[0]]["counting"]
+                self.ranking[indice]["scores"] = val + j[1].numpy()
+                self.ranking[indice]["counting"] = count + 1
 
     def bert_embedding(self):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
@@ -207,5 +219,5 @@ class AmazonDataset(Dataset):
         for token in tokenized_text:
             sent = get_sentiment(token)
             embedding.append(self.embedded_words_dict[token] * sent)
-        return embedding, lab
+        return embedding, lab, tokenized_text
 

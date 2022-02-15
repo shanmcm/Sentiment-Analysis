@@ -14,7 +14,6 @@ nltk.download('averaged_perceptron_tagger')
 NUM_CLASSES = 5
 BATCH_SIZE = 32
 NUM_EPOCHS = 8
-WEIGHT_DECAY = 0.025
 LR = 1e-3
 DROPOUT_RATE = 0.4
 SEED = 42

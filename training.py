@@ -51,9 +51,9 @@ ds.filter()
 print("Filtered dataset")
 len_ds = ds.__len__()
 weights = class_weight.compute_class_weight('balanced', classes=np.unique(ds.labels), y=ds.labels)
-weights = torch.Tensor(list(weights.values()))
+weights = torch.Tensor(weights)
 train_ds, test_ds = train_val_dataset(ds)
-
+ds.get_tfidf()
 # Define parameters
 batch_size = params.BATCH_SIZE
 hidden_dim = 128
@@ -91,9 +91,16 @@ with torch.enable_grad():
         # training
         epoch_loss = 0; epoch_acc = 0; epoch_f1 = 0; epoch_precision = 0; epoch_recall = 0
         print(f"Epoch: {epoch}")
-        for idxs, (batch, labels) in enumerate(train_loader):
+        for idxs, (batch, labels, sentences_list) in enumerate(train_loader):
+            important_words = [[(i, cnt, x) for cnt, x in enumerate(sentences_list[i]) if
+                                x.replace("#", "") in ds.ranking["term"].to_numpy()] for i in
+                               range(len(sentences_list))]
             batch = batch.to(device)
-            predictions = lstm_model(batch).to('cpu')
+            predictions, attention = lstm_model(batch)
+            attention = attention.detach()
+            scores_by_w = [[(word, attention[j][i]) for i, j, word in s] for s in important_words]
+            # ds.update_ranking(scores_by_w)
+            predictions.to('cpu')
             long_labels = labels.type(torch.LongTensor)
             loss1 = ce(predictions, long_labels) * 0.5
             # loss1 = bce(predictions, nn.functional.one_hot(long_labels).float())  # * 0.5
