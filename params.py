@@ -18,8 +18,8 @@ LR = 1e-3
 DROPOUT_RATE = 0.4
 SEED = 42
 MAX_SENT_LEN = 500
-NUM_FEATURES = 768
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 EMBEDDING_TYPE = 'concat' # 'avg'
 LOSS1 = 'ce' # 'bce'
 LOSS2 = 'mse' # '1HEMSE'
+NUM_FEATURES = 768 if EMBEDDING_TYPE == 'avg' else 3072
