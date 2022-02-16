@@ -123,8 +123,8 @@ class AmazonDataset(Dataset):
                     indice = self.ranking[self.ranking["term"] == j[0]].index[0]
                     val = self.ranking[self.ranking["term"] == j[0]]["scores"].values[0]
                     count = self.ranking[self.ranking["term"] == j[0]]["counting"]
-                    self.ranking[indice, "scores"] = val + j[1].numpy()
-                    self.ranking[indice, "counting"] = count + 1
+                    self.ranking.at[indice, "scores"] = val + j[1].numpy()
+                    self.ranking.at[indice, "counting"] = count + 1
 
     def bert_embedding(self):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
