@@ -14,5 +14,6 @@ The available files are:
 - params: contains all the parameters used during the training; specifically:
   - embedding_type: allows to choose among 2 types of word embedding: "concat" or "avg", which respectively takes the concatenation [average] of the 4 last hidden layers froma BERT model
   - loss[1][2]: allow to choose which loss is desidered for both the regression and the classification part
+- ranking: it contains, for each of the 160 most common words in the dataset, the average attention value among the whole training step
   
  
