@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-import pickle
+import pickle5 as pickle
 from joblib.numpy_pickle_utils import xrange
 from nltk.corpus import sentiwordnet as swn
 from nltk.corpus import stopwords
@@ -123,7 +123,7 @@ class AmazonDataset(Dataset):
                     indice = self.ranking[self.ranking["term"] == j[0]].index[0]
                     val = self.ranking[self.ranking["term"] == j[0]]["scores"].values[0]
                     count = self.ranking[self.ranking["term"] == j[0]]["counting"]
-                    self.ranking.at[indice, "scores"] = val + j[1].numpy()
+                    self.ranking.at[indice, "scores"] = val + j[1].cpu().numpy()
                     self.ranking.at[indice, "counting"] = count + 1
 
     def bert_embedding(self):

@@ -152,16 +152,21 @@ with torch.enable_grad():
 
 # load weights and make predictions
 lstm_model.load_state_dict(torch.load("saved_weights_BiLSTM.pt"))
-epoch_loss = 0
-epoch_acc = 0
+
 
 lstm_model.eval()
 
 test_loader = DataLoader(test_ds, num_workers=4, collate_fn=dataset.collate_batch,
                          batch_size=batch_size, drop_last=True)
+epoch_loss = 0;
+epoch_acc = 0;
+epoch_f1 = 0;
+epoch_precision = 0;
+epoch_recall = 0
 
 with torch.no_grad():
     for idxs, (batch, labels, _) in enumerate(test_loader):
+        batch = batch.to(device)
         predictions, _ = lstm_model(batch)
         predictions = predictions.to("cpu")
         long_labels = labels.type(torch.LongTensor)
